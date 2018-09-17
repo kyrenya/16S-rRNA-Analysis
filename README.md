@@ -35,7 +35,13 @@ In this repository you will find:
       - R environment: workspace.RData
       
       
-    
+
+![alt text](https://raw.githubusercontent.com/kyrenya/16S-rRNA-Analysis/master/workflow.jpg)
+
+QIIME, QIIME2 and DADA2 workflows overview. Simplified scheme of processes (blue boxes) and objects (blue ellipses) yielded in each pipeline. QIIME1 and QIIME2 allow the complete analysis of sequencing data, providing tools for carrying out statistics and plotting and visualizing data. On the contrary, DADA2 package pipeline ends in the production of the feature table, which shall be used with other tools to complete the analysis. Adapted from Navas-Molina et al., 2013 and https://qiime2.org
+
+
+
 Tools needed for Running the Pipelines in the 16_Q1_Q2_Dada2.Rmd: 
   Follow the instructions for installing QIIME using miniconda:
 
