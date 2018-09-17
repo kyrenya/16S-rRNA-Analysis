@@ -3,9 +3,10 @@ title: "CommensalGutBacteria_Metagenomics"
 author: "Cirenia Arias Baldrich"
 date: "February 28, 2018"
 output:
-  html_document:
-    toc: yes
   
+  html_document:
+    keep_md: yes
+    toc: yes
 ---
 
 
@@ -16,7 +17,7 @@ output:
 
 # knitr::opts_chunk$set(root.dir = 'YOURPATH')
 
-knitr::opts_chunk$set(root.dir = "/home/cire/Dropbox/GITHUB/")
+knitr::opts_chunk$set(root.dir = "/home/cire/Dropbox/16S-rRNA-Analysis/16Analysis")
 
 #avoid re-running commands
 knitr::opts_chunk$set(cache=TRUE)
@@ -892,7 +893,7 @@ These quality profiles inform the error model of the subsequent denosing step, s
 
 - Dereplicate the filtered fastq files:
 
-```{r dereplicate, cache=TRUE, eval=FALSE}
+```{r dereplicate, cache=TRUE}
 
 derepFs <- derepFastq(filt_FWs, verbose=TRUE)
 
@@ -1177,7 +1178,7 @@ ps_gg
 
 rarefaction of ps otu tables: we make a copy of the ps objects:
 
-```{r rarefaction_dada2, cache=TRUE, eval=FALSE}
+```{r rarefaction_dada2, cache=TRUE}
 
 
 depth_raref <- min(sample_sums(ps))
