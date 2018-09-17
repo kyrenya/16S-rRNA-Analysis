@@ -87,5 +87,5 @@ The R packages versions used for this work are listed in the Session_Info sectio
 
 
 [Click here to pre-view the 16SAnalysis Report document (16S_Q1_Q2_Dada2.html)]
-(http://htmlpreview.github.io/?https://github.com/kyrenya/16S-rRNA-Analysis/master/16SAnalysis/16S_Q1_Q2_Dada2.html)
-
+(http://htmlpreview.github.io/?https://github.com/kyrenya/master/16S-rRNA-Analysis/16SAnalysis/16S_Q1_Q2_Dada2.html 
+http://htmlpreview.github.io/?https://github.com/kyrenya/16S-rRNA-Analysis/blob/master/16SAnalysis/16S_Q1_Q2_Dada2.html
