@@ -893,7 +893,7 @@ These quality profiles inform the error model of the subsequent denosing step, s
 
 - Dereplicate the filtered fastq files:
 
-```{r dereplicate, cache=TRUE}
+```{r dereplicate, cache=TRUE, message=FALSE}
 
 derepFs <- derepFastq(filt_FWs, verbose=TRUE)
 
