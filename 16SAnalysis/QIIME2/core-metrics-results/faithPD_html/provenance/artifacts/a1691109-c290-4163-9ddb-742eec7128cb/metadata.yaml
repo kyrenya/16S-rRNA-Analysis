@@ -1,0 +1,3 @@
+uuid: a1691109-c290-4163-9ddb-742eec7128cb
+type: SampleData[AlphaDiversity] % Properties(['phylogenetic'])
+format: AlphaDiversityDirectoryFormat

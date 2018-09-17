@@ -1,0 +1,18 @@
+# The tests of significance were performed using a two-sided Student's two-sample t-test.
+# Alternative hypothesis: Group 1 mean != Group 2 mean
+# The nonparametric p-values were calculated using 999 Monte Carlo permutations.
+# The nonparametric p-values contain the correct number of significant digits.
+# Entries marked with "N/A" could not be calculated because at least one of the groups
+# of distances was empty, both groups each contained only a single distance, or
+# the test could not be performed (e.g. no variance in groups with the same mean).
+Group 1	Group 2	t statistic	Parametric p-value	Parametric p-value (Bonferroni-corrected)	Nonparametric p-value	Nonparametric p-value (Bonferroni-corrected)
+All within AntibioticUsage	All between AntibioticUsage	-18.570136781	3.717944964829346e-22	3.717944964829346e-21	0.001	0.010
+All within AntibioticUsage	None vs. None	2.70063134661	0.011611113849736565	0.11611113849736565	0.021	0.210
+All within AntibioticUsage	Streptomycin vs. Streptomycin	-2.54242706219	0.016823115565524693	0.16823115565524693	0.022	0.220
+All within AntibioticUsage	None vs. Streptomycin	-18.570136781	3.717944964829346e-22	3.717944964829346e-21	0.001	0.010
+All between AntibioticUsage	None vs. None	48.7685670097	0.0	0.0	0.001	0.010
+All between AntibioticUsage	Streptomycin vs. Streptomycin	21.0552320169	0.0	0.0	0.001	0.010
+All between AntibioticUsage	None vs. Streptomycin	0.0	1.0	1	1.000	1.000
+None vs. None	Streptomycin vs. Streptomycin	-8.63866677587	8.070962247864432e-08	8.070962247864432e-07	0.001	0.010
+None vs. None	None vs. Streptomycin	-48.7685670097	2.456579478538251e-32	2.456579478538251e-31	0.001	0.010
+Streptomycin vs. Streptomycin	None vs. Streptomycin	-21.0552320169	1.0572373577866344e-20	1.0572373577866344e-19	0.001	0.010

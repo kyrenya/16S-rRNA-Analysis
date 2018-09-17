@@ -1,0 +1,25 @@
+Num samples: 10
+Num observations: 1462
+Total count: 88230
+Table density (fraction of non-zero values): 0.309
+
+Counts/sample summary:
+ Min: 7786,000
+ Max: 9350,000
+ Median: 8727,500
+ Mean: 8823,000
+ Std. dev.: 442,003
+ Sample Metadata Categories: None provided
+ Observation Metadata Categories: taxonomy
+
+Counts/sample detail:
+WT.day3.14: 7786,000
+WT.unt.2: 8606,000
+WT.unt.7: 8676,000
+WT.unt.4: 8688,000
+WT.unt.3: 8723,000
+WT.unt.1: 8732,000
+WT.day3.15: 9122,000
+WT.day3.11: 9268,000
+WT.day3.9: 9279,000
+WT.day3.13: 9350,000

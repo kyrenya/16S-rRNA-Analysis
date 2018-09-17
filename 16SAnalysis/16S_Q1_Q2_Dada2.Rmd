@@ -1,0 +1,2919 @@
+---
+title: "CommensalGutBacteria_Metagenomics"
+author: "Cirenia Arias Baldrich"
+date: "February 28, 2018"
+output:
+  html_document:
+    toc: yes
+  
+---
+
+
+
+```{r setup, include=FALSE}
+
+#Set the working directory where your files are: 
+
+# knitr::opts_chunk$set(root.dir = 'YOURPATH')
+
+knitr::opts_chunk$set(root.dir = "/home/cire/Dropbox/GITHUB/")
+
+#avoid re-running commands
+knitr::opts_chunk$set(cache=TRUE)
+
+
+```
+
+```{r packages, include=FALSE}
+
+#checking packages installed. 
+
+
+packages <- c("phyloseq","BIOM", "ShortRead", "DECIPHER",
+              "phangorn", "gridExtra", "codetools", "msa", "ggplot2", "ape", "vegan", "dada2",
+              "qiimer", "picante", "Vennerable", "grid", "reshape2", "BiodiversityR", "tidyverse", "devtools", "dada2")
+
+lapply(packages, require, character.only =TRUE)
+
+devtools::install_github("gauravsk/ranacapa")
+
+
+
+
+
+```
+
+Loading packages: 
+
+```{r load_packages}
+
+library(dada2)
+library(ranacapa)
+library(devtools)
+library(tictoc)
+library(ape)
+library(phyloseq)
+library(picante)
+library(phangorn)
+library(devtools)
+library(Vennerable)
+library(vegan)
+library(ShortRead)
+library(DECIPHER)
+library(msa)
+library(qiimer)
+library(ggplot2)
+library(BiodiversityR)
+library(grid)
+
+```
+
+
+```{r paths, include=FALSE}
+#Setting the paths of the folders we will need:
+
+
+#mypath <- "/PATHTOFILES"
+
+mypath <- "/home/cire/Dropbox/GITHUB"
+
+
+path.16S <- './16SDATA'
+path.q1 <- './QIIMEI'
+path.q2 <- './QIIME2'
+path.dada2 <- './DADA2'
+activateQiime1 <- 'source ../../miniconda3/bin/activate qiime1'
+activateQiime2 <- 'source ../../miniconda3/bin/activate qiime2-2018.8'
+
+
+Sys.setenv(PATH_16S = path.16S)
+Sys.setenv(PATH_Q1 = path.q1)
+Sys.setenv(PATH_Q2 = path.q2)
+Sys.setenv(DADA2 = path.dada2)
+Sys.setenv(MYPATH = mypath)
+
+Sys.setenv(QIIME1 = activateQiime1)
+Sys.setenv(QIIME2 = activateQiime2)
+
+```
+
+```{bash paths_test, include=FALSE}
+#testing paths are fine
+
+ls $PATH_Q1
+ls $PATH_Q2
+ls $DADA2
+
+```
+
+
+```{bash Q1test, eval=FALSE, include=FALSE}
+
+$QIIME1
+
+split_libraries_fastq.py --help
+
+```
+
+```{bash Q2test, eval=FALSE, include=FALSE}
+
+$QIIME2
+
+qiime tools --help
+
+```
+
+
+# QIIME I
+
+Check we have all files needed:
+
+-  Metadata
+-  Reads
+-  reference dataset (Greengenes)
+
+
+
+```{bash path16S_content, include=FALSE}
+
+ls $PATH_16S
+
+```
+
+
+
+### Quality Treatment 
+
+Filter: 
+
+Maximum unacceptable Phred quality score, -q=19 will keep Q20 and better.
+
+
+```{bash quality_filter, eval=FALSE}
+
+$QIIME1
+SAMPLE_IDS="WT.day3.11,WT.day3.13,WT.day3.14,WT.day3.15,WT.day3.9,WT.unt.1,WT.unt.2,WT.unt.3,WT.unt.4,WT.unt.7"
+
+# echo $SAMPLE_IDS
+
+split_libraries_fastq.py -i ./16SDATA/16S_WT_day3_11_SRR2628505_1.fastq.gz,./16SDATA/16S_WT_day3_13_SRR2628506_1.fastq.gz,./16SDATA/16S_WT_day3_14_SRR2627471_1.fastq.gz,./16SDATA/16S_WT_day3_15_SRR2628507_1.fastq.gz,./16SDATA/16S_WT_day3_9_SRR2628504_1.fastq.gz,./16SDATA/16S_WT_unt_1_SRR2627457_1.fastq.gz,./16SDATA/16S_WT_unt_2_SRR2627461_1.fastq.gz,./16SDATA/16S_WT_unt_3_SRR2627463_1.fastq.gz,./16SDATA/16S_WT_unt_4_SRR2627464_1.fastq.gz,./16SDATA/16S_WT_unt_7_SRR2627465_1.fastq.gz --sample_ids $SAMPLE_IDS -o $PATH_Q1/filtered_q20 -q 19 --barcode_type 'not-barcoded' --phred_offset 33
+
+```
+
+
+
+    output files in 'filtered_q20' folder
+
+      "histograms.txt"
+  
+      "seqs.fna"
+  
+      "split_library_log.txt"
+
+### Picking Operational Taxonomic Units (OTU)
+
+Open-reference OTU picking: applies first closed-reference method, and subsequent de novo clustering on those sequences not matching the reference within the  similarity threshold
+
+Sequences will be clustered into OTUs against reference sequence collection: 97_otus_fasta, greengenes database: 
+
+the pick_open_reference_OTU.py command will: 
+
+-  pick OTUs: based on SIMILARITY, will pick a representative sequence from each OTU.
+-  taxonomy assignment: assign the OTU to a TAXONOMIC identity using reference databases
+-  sequence alignment, will build a phylogenetic tree
+
+We will use then: 
+  
+  the filtered sequences: seqs.fna 
+  the OTUs reference: 97_otus.fasta (by default if no parameter specified)
+
+```{bash picking_OTUs, eval=FALSE}
+
+
+$QIIME1
+pick_open_reference_otus.py -o $PATH_Q1/otus/ -i $PATH_Q1/filtered_q20/seqs.fna
+
+
+```
+
+Output:
+
+```{bash picking_OTUs output, echo=FALSE}
+
+ls $PATH_Q1/otus/ 
+```
+
+Mainly interested in otu_table_mc2_w_tax_no_pynast_failures.biom
+  - with taxonomic assignments for each OTU as observation metadata
+  - without sequences failing the alignment to the OTU representative sequences.
+  - no OTUs with a total count of 1
+  - no OTUs whose representative sequence couldn't be aligned with PyNAST
+
+To obtain summary statistics of the OTU table:
+
+```{bash summarize_stats, eval=FALSE}
+
+$QIIME1
+biom summarize-table -i $PATH_Q1/otus/otu_table_mc2_w_tax_no_pynast_failures.biom
+
+```
+
+This summary will be used to determine the depth of sequencing to be used in diversity analyses.
+
+Any samples that don't have at least that many sequences (sample depth) will not be included in the analysis (number of sequences Vs number of samples discarded - trade-off )
+
+In the Counts/sample detail:
+
+- Min: 7786 will be in this example the sample depth
+
+
+### Diversity Analysis
+
+- alpha diversity:  ecological complexity of a single sample
+- beta diversity:   differences between samples
+
+```{bash diversity_analysis, eval=FALSE}
+
+$QIIME1
+core_diversity_analyses.py -o $PATH_Q1/cdout/ --recover_from_failure -c "AntibioticUsage" -i $PATH_Q1/otus/otu_table_mc2_w_tax_no_pynast_failures.biom -m $PATH_16S/metadata.tab -t $PATH_Q1/otus/rep_set.tre -e 7786
+
+```
+
+ 
+ 
+[Click here to see the results](./QIIMEI/cdout/index.html)
+
+
+The Taxonomy Summary Results show bar_charts with the different taxonomic levels observed in each sample, or by category (AntibioticUsage, in this case), comparing between groups.
+
+
+```{bash lv7, eval=FALSE}
+
+
+#level 7
+#doing the summary first, with Q1 tools, then plotting. *Note, plot_taxa_summary.py doenst work with qiime installation with matplotlib 2.2.2, only works with conda qiime installation 
+
+$QIIME1
+
+summarize_taxa.py \
+-i $PATH_Q1/cdout/table_even7786.biom -L 7 \
+-o $PATH_Q1/LEV7/otus_level7_raref/relative_abundance/
+
+plot_taxa_summary.py \
+-i $PATH_Q1/LEV7/otus_level7_raref/relative_abundance/table_even7786_L7.txt \
+-o $PATH_Q1/LEV7/level7_plots
+
+```
+
+
+[Click here for Level 7 Bar Chart](./QIIMEI/LEV7/level7_plots/bar_charts.html)
+
+#QIIME II
+
+
+
+Data produced by QIIME2 exist as Artifacts, containing data and metadata. Typically has the .qza extension. Visualizations (.qzv) are terminal outputs of an analysis.
+
+Fastq manifest formats:
+
+Manifest file maps sample identifiers to fastq.gz or fastq absolute filepaths that contain sequence and quality data for the sample, and indicates the direction of the reads
+
+
+Edit your manifest file and run:
+
+
+### Importing data:
+
+```{bash importing_data, eval=FALSE}
+
+$QIIME2
+
+qiime tools import \
+ --type 'SampleData[SequencesWithQuality]' \
+ --input-path $PATH_Q2/importing_data/se-33-manifest-mine \
+ --output-path $PATH_Q2/single-end-demux.qza \
+ --input-format SingleEndFastqManifestPhred33
+
+```
+
+### Summarizing sequence counts:
+
+```{bash summarize, eval=FALSE}
+
+$QIIME2
+
+qiime demux summarize \
+--i-data $PATH_Q2/single-end-demux.qza \
+--output-dir $PATH_Q2/summary
+
+```
+
+
+we can explore the Sequence Counts summary plot, and the 
+Interactive Quality Plot: 
+
+[Click here to take a look](./QIIME2/summary/visualizationfolder/data/index.html)
+
+
+
+
+### Sequence Quality Control and Feature Table Construction
+
+### Dada2
+The result will be a 
+
+- FeatureTable[Frequency] QIIME 2 artifact: contains counts (frequencies) of each unique sequence in each sample in the dataset                          
+- FeatureData[Sequence] QIIME 2 artifact:maps feature identifiers in the 
+- FeatureTable to the sequences they represent.
+
+The "OTUs" resulting from DADA2 are created by grouping unique sequences, equivalent of 100% OTUs from QIIME1, and are generally referred to as sequence variants. DADA2 is a pipeline for detecting and correcting Illumina amplicon sequence data. Quality control process will filter phiX reads and chimeric sequences.
+
+
+Creation of representative sequences and table:
+--p-trunc-q INTEGER
+Reads are truncated at the first instance of a quality score less than or equal to this value. If the resulting read is then shorter than 'trunc_len', it is discarded.
+
+q --> 19 to try to have similar results than with qiimeI
+
+```{bash FeatureTable&RepSeqs, eval=FALSE}
+
+$QIIME2
+
+qiime dada2 denoise-single \
+--i-demultiplexed-seqs $PATH_Q2/single-end-demux.qza \
+--p-trunc-len 0 \
+--p-trunc-q 19 \
+--output-dir $PATH_Q2/DADA2/
+
+```
+
+Output: 
+
+- table.qza
+- representative_sequences.qza
+
+### FeatureTable and FeatureData summaries: 
+
+Creation of visual summaries to explore the resulting data: 
+
+ - feature-table summarize: 
+ how many sequences are associated with each sample and with each feature, histograms of those distributions, and some related summary statistics.
+ 
+ 
+ 
+
+```{bash FeatureTable Summarize, eval=FALSE}
+
+$QIIME2
+
+qiime feature-table summarize \
+--i-table $PATH_Q2/DADA2/table.qza \
+--o-visualization $PATH_Q2/DADA2/table-dada2.qzv \
+--m-sample-metadata-file ./16SDATA/metadata.tab 
+
+
+```
+
+[Click here to take a look](./QIIME2/DADA2/table-dada_html/data/index.html)
+
+
+- feature-table tabulate-seqs: 
+ maps of feature IDs to sequences, and provide links to easily BLAST each sequence against the NCBI nt database.
+
+```{bash FeatureTable tabulate, eval=FALSE}
+
+$QIIME2
+qiime feature-table tabulate-seqs \
+--i-data $PATH_Q2/DADA2/representative_sequences.qza \
+--o-visualization $PATH_Q2/DADA2/rep-seqs-dada2.qzv
+
+```
+
+[Click here to take a look](./QIIME2/DADA2/rep-seqs-dada2_html/data/index.html)
+
+
+### Phylogenetic diversity analyses
+
+### Generating a Tree
+
+QIIME supports several phylogenetic diversity metrics as: 
+         Faith's Phylogenetic Diversity
+         Weighted & Unweighted Unifrac
+
+These metrics require: 
+      -counts of features per sample (as the FeatureTable[Frequency])
+      -a rooted phylogenetic tree relating the features to one another.
+  
+ Steps to generate this Phylogeny[Rooted] QIIME2 artifact: 
+ 
+ -- Multiple sequence alignment of the sequences in
+ FeatureData[Sequence] --> FeatureData[AlignedSequence]
+    
+
+```{bash multiple_alignment, eval=FALSE}
+
+$QIIME2
+
+qiime alignment mafft \
+--i-sequences $PATH_Q2/DADA2/representative_sequences.qza \
+--o-alignment $PATH_Q2/DADA2/aligned-rep-seqs-dada2.qza
+
+```
+
+Output: 
+
+  - aligned-rep-seqs-dada2.qza
+  
+
+
+```{bash export_artefact, eval=FALSE}
+
+$QIIME2
+
+qiime tools export \
+--input-path $PATH_Q2/DADA2/aligned-rep-seqs-dada2.qza \
+--output-path ./exported_data
+
+```
+
+
+Next, we filter the alignment to remove highly variable positions, that are generally considered to add noise to a resulting phylogenetic tree.
+
+
+```{bash filter_alignment, eval=FALSE}
+
+$QIIME2
+
+qiime alignment mask \
+--i-alignment $PATH_Q2/DADA2/aligned-rep-seqs-dada2.qza \
+--o-masked-alignment $PATH_Q2/DADA2/masked-aligned-rep-seqs-dada2.qza
+
+```
+
+FastTree generates a phylogenetic tree from the masked alignment:
+
+```{bash FastTree, eval=FALSE}
+
+$QIIME2
+qiime phylogeny fasttree \
+--i-alignment $PATH_Q2/DADA2/masked-aligned-rep-seqs-dada2.qza \
+--o-tree $PATH_Q2/DADA2/unrooted-tree.qza
+
+
+```
+
+Output: unrooted-tree.qza
+
+Final Step:
+Midpoint rooting places the root:
+
+
+```{bash Root_Tree, eval=FALSE}
+
+$QIIME2
+qiime phylogeny midpoint-root \
+--i-tree $PATH_Q2/DADA2/unrooted-tree.qza \
+--o-rooted-tree $PATH_Q2/DADA2/rooted-tree.qza
+
+
+```
+
+Output: rooted-tree.qza
+
+###Alpha and beta diversity analysis
+
+q2-diversity plugin supports:
+   alpha and beta diversity metrics
+   applying related statistical tests
+   generation of interactive visualizations
+   
+  
+1. core-metrics plylogenetic:
+- rarefies a FeatureTable[Frequency] to a specified depth
+- computes alpha & beta diversity metrics
+- generates PCoA plots using Emperor for beta-diversity metrics
+
+Metrics computed by default:
+
+* Alpha diversity
+
+      > Shannon’s diversity index (a quantitative measure of community richness)
+      
+      > Observed OTUs (a qualitative measure of community richness)
+      
+      > Faith’s Phylogenetic Diversity (a qualitiative measure of community richness that incorporates phylogenetic relationships between the features)
+      
+      > Evenness (or Pielou’s Evenness; a measure of community evenness)
+
+* Beta diversity
+      
+      > Jaccard distance (a qualitative measure of community dissimilarity)
+      
+      > Bray-Curtis distance (a quantitative measure of community dissimilarity)
+      
+      > unweighted UniFrac distance (a qualitative measure of community dissimilarity that incorporates phylogenetic relationships between the features)
+    
+      > weighted UniFrac distance (a quantitative measure of community dissimilarity that incorporates phylogenetic relationships between the features)
+
+
+#### --p-sampling-depth: 
+  
+  even sampling (i.e. rarefaction) depth. 
+
+Most diversity metrics are sensitive to different sampling depths across different samples.
+The following script will randomly subsample the counts for each sample to the --p-sampling-depth value.
+Example: 
+for sample depth  5474 (value of minimal sequence count in samples of this dataset --> see Interactive Sample Detail of FeatureTable and FeatureData summaries)
+
+The command will subsample the counts in each sample withour replacement so that each sample in the resulting table has a total sequence count of 5474.
+If the total count for any sample(s) were smaller than that value, those samples would be dropped from the diversity analysis. Its recommended to choose a value as high as possible (retaining more sequences per sample) while excluding as few samples as possible. 
+
+```{bash diversity core-metrics, eval=FALSE}
+
+$QIIME2
+
+qiime diversity core-metrics-phylogenetic \
+ --i-phylogeny $PATH_Q2/DADA2/rooted-tree.qza \
+ --i-table $PATH_Q2/DADA2/table.qza \
+ --p-sampling-depth 5474 \
+ --m-metadata-file ./16SDATA/metadata.tab \
+ --output-dir $PATH_Q2/core-metrics-results
+
+```
+
+Click to take a look at: 
+
+[Unweighted Unifrac](./QIIME2/core-metrics-results/unweighted_unifrac_emperor_html/data/index.html)
+
+[Weighted Unifrac](./QIIME2/core-metrics-results/weighted_unifrac_emperor_html/data/index.html)
+
+[Bray-Curtis](./QIIME2/core-metrics-results/bray_curtis_emperor_html/data/index.html)
+
+[Jaccard](./QIIME2/core-metrics-results/jaccard_emperor_html/data/index.html)
+
+
+
+#### Exploration of the microbial composition in the context of the Antibiotic Usage:
+
+* Test for associations between categories and alpha diversity data: Faith Phylogenetic Diversity (a measure of community richness) and evenness metrics:
+
+    -  Faith Phylogenetic Diversity:
+
+```{bash Faith_Phy_Div, eval=FALSE}
+
+$QIIME2
+
+qiime diversity alpha-group-significance \
+ --i-alpha-diversity $PATH_Q2/core-metrics-results/faith_pd_vector.qza \
+ --m-metadata-file ./16SDATA/metadata.tab \
+ --o-visualization $PATH_Q2/core-metrics-results/faith-pd-group-significance.qzv
+
+```
+
+
+  - Evenness:
+  
+```{bash Evenness, eval=FALSE}
+
+$QIIME2
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity $PATH_Q2/core-metrics-results/evenness_vector.qza \
+  --m-metadata-file ./16SDATA/metadata.tab \
+  --o-visualization $PATH_Q2/core-metrics-results/evenness-group-significance.qzv
+
+```
+
+
+Click to take a look at:
+
+[FaithPD_Significance](./QIIME2/core-metrics-results/faithPD_html/data/index.html)
+
+[Evenness_Significance](./QIIME2/core-metrics-results/evenness_html/data/index.html)
+
+
+
+#### Analyzing sample composition
+
+PERMANOVA analysis in context of categorical metadata uses the 
+beta-group-significance command.
+
+It tests whether the distances between samples within a group, such as samples with treatment, are more similar to each other than they are to samples from the without-treatment group.
+
+Here, its applied to the unweighted UniFrac distances using one sample metadata column:
+
+```{bash beta-group-significance, eval=FALSE}
+
+$QIIME2
+
+qiime diversity beta-group-significance \
+--i-distance-matrix $PATH_Q2/core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+--m-metadata-file ./16SDATA/metadata.tab \
+--m-metadata-column AntibioticUsage \
+--o-visualization $PATH_Q2/core-metrics-results/unweighted_unifrac_AntibioticUsage-significance.qzv
+
+
+```
+
+
+Click here to see: 
+
+[Unweighted_UF_Antib](./QIIME2/core-metrics-results/unweighted_Antib_html/data/index.html)
+
+
+#### Checking the reliability of depth: Alpha rarefaction plotting
+
+Exploring alpha diversity as a function of sampling depth: 
+qiime diversity alpha-rarefaction visualizer:
+
+This tool computes one or more alpha diversity metrics at multiple sampling depths, in steps between 1 (optionally controlled with --p-min-depth) and the value provided as --p-max-depth.
+
+At each sampling depth step, 10 rarefied tables will be generated, and the diversity metrics will be computed for all samples in the tables. The number of iterations (rarefied tables computed at each sampling depth) can be controlled with --p-iterations. 
+
+Average diversity values will be plotted for each sample at each even sampling depth, and samples can be grouped based on metadata in the resulting visualization if sample metadata is provided with the --m-metadata-file parameter.
+
+```{bash rarefaction plotting, eval=FALSE}
+
+$QIIME2
+
+qiime diversity alpha-rarefaction \
+--i-table $PATH_Q2/DADA2/table.qza \
+--i-phylogeny $PATH_Q2/DADA2/rooted-tree.qza \
+--p-max-depth 6000 \
+--m-metadata-file ./16SDATA/metadata.tab \
+--o-visualization $PATH_Q2/alpha-rarefaction.qzv
+
+```
+
+
+[Rarefaction-plots](./QIIME2/alpha_raref_html/data/index.html)
+
+[Click here for more info about these plots](./QIIME2/rarefaction_plots_info)
+
+
+#### Taxonomic Analysis
+
+Exploring the taxonomic composition of the samples:
+
+1- assign taxonomy to the sequences in our FeatureData[Sequence] artifact. 
+  
+  
+Greengenes 13_8 99% OTUs full-length sequences
+  
+  Applying this classifier to our sequences, we generate a visualization of the resulting mapping from sequence to taxonomy.
+  
+  check you have:  gg-13-8-99--nb-classifier.qza in the correct Path
+  
+  https://data.qiime2.org/2018.8/common/gg-13-8-99-nb-classifier.qza
+
+```{bash taxonomyassign_full length, eval=FALSE}
+
+$QIIME2
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier $PATH_Q2/gg-13-8-99-nb-classifier.qza \
+  --i-reads $PATH_Q2/DADA2/representative_sequences.qza \
+  --o-classification $PATH_Q2/DADA2/taxonomy_full.qza
+
+```
+
+
+Output: 
+
+taxonomy_full.qza
+
+
+Let's produce a visualization object: 
+
+```{bash, visualiz_tax_full, eval=FALSE}
+
+$QIIME2
+
+qiime metadata tabulate \
+--m-input-file $PATH_Q2/DADA2/taxonomy_full.qza \
+--o-visualization $PATH_Q2/DADA2/taxonomy_full.qzv
+
+
+```
+
+[Click here to take a look at the taxonomy table](./QIIME2/DADA2/taxonomy_html/data/index.html)
+
+
+
+2. Explore the taxonomic composition of the samples through interactive bar plots.
+
+Generation of the taxa-bar-plots:
+
+
+
+
+Taxonomic Levels: 
+
+- Level 1 = Kingdom 
+
+- Level 2 = Phylum 
+
+- Level 3 = Class 
+
+- Level 4 = Order 
+
+- Level 5 = Family 
+
+- Level 6 = Genus 
+
+- Level 7 = Species 
+
+
+
+
+2. Explore the taxonomic composition of the samples through interactive bar plots.
+
+Generation of the taxa-bar-plots:
+
+```{bash taxa-barplots_full, eval=FALSE}
+
+$QIIME2
+
+qiime taxa barplot \
+  --i-table $PATH_Q2/DADA2/table.qza \
+  --i-taxonomy $PATH_Q2/DADA2/taxonomy_full.qza \
+  --m-metadata-file ./16SDATA/metadata.tab \
+  --o-visualization $PATH_Q2/DADA2/+taxa-bar-plots_full.qzv
+
+
+```
+
+[Click here to explore the barplots](./QIIME2/DADA2/taxa_barplots_html/data/index.html)
+
+
+#DADA2
+
+
+
+```{r dada package, include=FALSE}
+
+library(dada2);packageVersion("dada2")
+
+```
+
+
+```{r datalocation, include=FALSE}
+#check is path and dataset included ok
+list.files (path.16S)
+```
+
+##Filter and Trim
+
+Read in the names of the fastq files
+String manipulation to get lists of the fw and rv fastq files in matched order 
+
+Fw and Rv fastq filenames have format: 
+
+SAMPLENAME_1.fastq because in this case we only have FW.
+
+
+
+```{r Read names of fastq files}
+
+fnFWs <- sort(list.files(path.16S, pattern="_1.fastq", full.names = TRUE))
+
+fnFWs
+
+
+```
+
+
+Extract sample names 
+
+filenames have format: 16S_WT_XXX_XX_XXXXX_1.fastq
+
+
+```{r extract sampleIS}
+
+sample.ids <- sapply(strsplit(basename(fnFWs), "_SRR"), `[`, 1)
+sample.ids
+
+```
+
+##Examine quality profiles of  reads:
+
+    #visualizing the quality profiles of the  reads: 
+
+Quality Profile Plots of samples 1-3
+
+
+```{r plotQuality_Profile}
+
+plotQualityProfile(fnFWs[1:3])
+
+```
+
+
+* Perform filtering and trimming: 
+    
+Assign the filenames for the filtered fastq.gz files:
+
+
+```{r assign_filt_names}
+
+filt_path <- file.path(path.dada2, paste(path.dada2,"filtered",sep = ""))  #place filtered files in filtered/ subdirectory
+filt_FWs <- file.path(filt_path, paste0(sample.ids, "_F_filt.fastq.gz"))
+
+filt_path
+
+filt_FWs
+
+```
+    
+
+
+```{r filter}
+
+
+
+out <- filterAndTrim(fnFWs, filt_FWs, truncLen =200, truncQ=2, maxN=0, maxEE=2, rm.phix=TRUE, compress=TRUE, multithread = TRUE)
+
+out
+
+
+```
+
+
+- Learn the Error Rates
+
+The DADA2 algorithm depends on a parametric error model (err) and every amplicon dataset has a different set of error rates. The learnErrors method learns the error mode from the data, by alternating estimation of the error rates and inference of sample composition until they converge on a jointly consistent solution. As in many optimization problems, the algorithm must begin with an initial guess, for which the maximum possible error rates in this data are used (the error rates if only the most abundant sequence is correct and all the rest are errors).
+
+  
+```{r learnError_ver2, cache=TRUE}
+
+err <- learnErrors(filt_FWs, multithread = TRUE)
+
+
+```
+
+##visualizing the estimated error rates: 
+
+```{r plotErrors}
+
+plotErrors(err, nominalQ = TRUE)
+
+```
+
+  
+The error rates for each possible transition (eg. A->C, A->G, …) are shown.
+
+Points are the observed error rates for each consensus quality score.
+The black line shows the estimated error rates after convergence. The red line shows the error rates expected under the nominal definition of the Q-value. 
+
+
+
+ checking the quality of the filtered:
+ 
+```{r check_filtered_q}
+
+plotQualityProfile(filt_FWs[1:3])
+
+
+```
+ 
+
+
+## Dereplication 
+
+Combines all identical sequencing reads into "unique sequences" with a corresponding "abundance": the number of reads with that unique sequence
+
+dereplication substantially reduces computation time by eliminating redundant comparisons
+
+- DADA2 retains a summary of the quality information associated with each unique sequence
+
+the consensus quality profile of a unique sequence is the average of the positional qualities from the dereplicated reads.
+These quality profiles inform the error model of the subsequent denosing step, significantly increasing DADA2's accuracy.
+
+
+- Dereplicate the filtered fastq files:
+
+```{r dereplicate, cache=TRUE, eval=FALSE}
+
+derepFs <- derepFastq(filt_FWs, verbose=TRUE)
+
+```
+
+
+-  Name the derep-class objects by the sample names 
+
+
+```{r derepfs_samples}
+
+names(derepFs) <- sample.ids
+
+```
+
+
+
+## Sample Inference
+
+- Apply the core sequence-variant inference algorithm to the dereplicated data
+
+Infer the sequence variants in each sample
+
+```{r seq_var_sample}
+
+dadaFs <- dada(derepFs, err= err, multithread = TRUE)
+
+
+```
+
+
+
+Inspecting the dada-class object returned by dada:
+
+```{r view_dada}
+
+dadaFs[[1]]
+
+```
+
+
+ 
+  ## Construct sequence table
+  
+construct a sequence table of our samples, a higher resolution version of the OTU table produced by traditional methods
+
+```{r construct_seqtable, cache=TRUE}
+
+seqtab <- makeSequenceTable(dadaFs)
+seqtab.sep <- removeBimeraDenovo(seqtab, multithread=TRUE)
+
+dim(seqtab)
+
+```
+
+
+
+
+-  Inspecting distribution of sequence lengths:
+
+```{r distrib seq_lengths, cache=TRUE}
+
+table(nchar(getSequences(seqtab)))
+
+```
+
+the sequence table is a matrix with rows corresponding to (and named by) the sequence variants. 
+
+- Remove chimeras
+
+The core dada method removes substitution and indel errors, but chimeras remain.
+
+Remove chimeric sequences:
+     
+```{r remove chimeras, cache=TRUE}
+
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread =TRUE, verbose=TRUE)
+
+dim(seqtab.nochim)
+
+sum(seqtab.nochim) / sum(seqtab)
+
+
+```
+
+
+
+
+
+```{r track-reads, cache=TRUE, include=FALSE}
+
+#Track reads through the pipeline 
+
+#As a final check of the progress, look at the number of reads that made it through each step in the pipeline: 
+
+getN <- function(x) sum(getUniques(x))
+
+getN
+
+track <- cbind(out, sapply(dadaFs, getN), rowSums(seqtab), rowSums(seqtab.nochim))
+
+colnames(track) <- c("input", "filtered", "denoised", "tabled", "nonchim")
+rownames(track) <- sample.ids
+
+track
+
+```
+
+
+
+## Assign Taxonomy
+
+
+It is common at this point, especially in 16S/18S/ITS, to classify sequence variants taxonomically
+
+DADA2 provides a native implementation of THE RDP'S NAIVE BAYESIAN CLASSIFIER for this purpose. 
+
+The assignTaxonomy function takes a set sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments:
+
+  
+- To follow along, check you have: 
+
+silva_nr_v128_train_set.fa.gz file 
+
+placed in the directory with the fastq files
+
+
+```{r assign taxonomy, cache=TRUE}
+
+
+taxa <- assignTaxonomy(seqtab.nochim, paste(path.16S, "/silva_nr_v128_train_set.fa.gz", sep=""), multithread = TRUE)
+
+```
+
+- We can also use the greengenes database to assign taxonomy, downloading the 
+
+gg_13_8_train_set_97.fa.gz file:
+
+
+```{r assign_taxonomy_gg97, cache=TRUE}
+
+
+  taxa_gg97 <- assignTaxonomy(seqtab.nochim, paste(path.16S, "/gg_13_8_train_set_97.fa.gz", sep=""), multithread = TRUE)
+
+
+
+```
+
+
+- optional --> the dada2package also implements a method to make SPECIES LEVEL ASSIGNMENTS BASED ON EXACT MATCHING between ASVs and sequenced reference strains.
+
+Currently species-assignment training fastas are available for the Silva and RDP 16S databases
+
+-To follow the optional species addition step, download the 
+
+silva_species_assignment_v128.fa.gz file, 
+and place it in the directory with the fastq files.
+
+
+```{r specieslevel_assignment, cache=TRUE}
+
+taxa <- addSpecies(taxa, paste(path.16S, "/silva_species_assignment_v128.fa.gz", sep=""))
+
+
+```
+
+
+
+```{r inspect_tax_assignments, cache=TRUE, include=FALSE}
+
+taxa.print <- taxa 
+rownames(taxa.print) <- NULL
+head(taxa.print)
+
+
+```
+
+```{r inspect_tax_assignments_gg97, cache=TRUE, include=FALSE}
+
+taxa.print_gg <- taxa_gg97 
+rownames(taxa.print_gg) <- NULL
+head(taxa.print_gg)
+
+
+```
+
+
+
+
+# HERE ENDS THE DADA2 R PACKAGE USE.
+# PHYLOSEQ R PACKAGE FOR ANALYSIS OF THE DATA
+
+ Phyloseq R package is a powerful framework for further analysis of microbiome data.
+
+  Import the tables produced by the DADA2 pipeline into phyloseq
+  
+  Add metadata of your data: 
+       
+
+
+```{r install phyloseq, include=FALSE}
+
+#source('http://bioconductor.org/biocLite.R')
+#biocLite('phyloseq')
+
+library(phyloseq); packageVersion("phyloseq")
+library(ggplot2); packageVersion("ggplot2")
+
+```
+
+
+-Import into phyloseq
+
+We can construct a simple sample data.frame based on the filenames.
+
+Usually this step would instead involve reading the sample data in from a file
+
+1) getting the sample-names, and category 
+
+```{r get sample_names, cache=TRUE}
+
+samples.out <- rownames(seqtab.nochim)
+samples.out
+
+namesamp <- sapply(strsplit(samples.out, "WT_"), `[`, 2)
+namesamp
+
+antibioticUsage <- sapply(strsplit(namesamp, "_"), '[', 1)
+antibioticUsage
+
+
+
+```
+
+
+2) Constructing the data-frame 
+
+
+```{r making_dataframe, cache=TRUE}
+
+samdf <- data.frame(AntibioticUsage=antibioticUsage)
+samdf$antibiotic[samdf$AntibioticUsage=="unt"] <- "unt"
+samdf$antibiotic[samdf$AntibioticUsage=="day3"] <- "Streptomycine"
+
+rownames(samdf) <- samples.out
+samdf
+
+```
+
+
+
+- We can now construct a phyloseq object directly from the dada2 outputs
+
+```{r phyloseq_object}
+
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows = FALSE),
+               sample_data(samdf),
+               tax_table(taxa))
+ps
+```
+
+```{r phyloseq_object_copy, include=FALSE}
+
+ps_copy2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows = FALSE),
+               sample_data(samdf),
+               tax_table(taxa))
+```
+
+- Optionally, we can also do an object for the taxa assignment with greengenes db: 
+
+```{r phyloseq_object_gg}
+
+ps_gg <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows = FALSE),
+               sample_data(samdf),
+               tax_table(taxa_gg97))
+ps_gg
+
+```
+
+
+## Ready to use phyloseq!!
+
+rarefaction of ps otu tables: we make a copy of the ps objects:
+
+```{r rarefaction_dada2, cache=TRUE, eval=FALSE}
+
+
+depth_raref <- min(sample_sums(ps))
+ps_raref <- rarefy_even_depth(ps, sample.size=depth_raref)
+
+
+ps_gg_raref <- rarefy_even_depth(ps_gg, sample.size=depth_raref)
+
+
+```
+### visualizations with Phyloseq: 
+
+#### Visualizing alpha-diversity  
+
+
+```{r alpha-diversity, cache=TRUE}
+
+plot_richness(ps, measures = c("Shannon","Observed", "Chao1"), color = "antibiotic") + theme_bw() + theme(axis.text.x = element_text(angle=90, hjust =1))
+
+
+```
+
+- We observe obvious systematic difference in alpha-diversity between treated and untreated samples
+
+
+#### Bar plots  
+
+
+```{r bigfigure_1, fig.width=20, fig.height=15}
+
+par(mfrow=c(2,3))
+
+plot_bar(ps,  fill="Phylum") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Phylum" )
+
+plot_bar(ps,  fill="Class") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Class" )
+
+plot_bar(ps,  fill="Order") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Order" )
+
+plot_bar(ps,  fill="Family") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Family" )
+
+plot_bar(ps,  fill="Genus") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Genus" )
+
+plot_bar(ps,  fill="Species") + facet_wrap(~antibiotic, scales="free_x") + labs(title = "Level Species" )
+
+```
+
+
+
+##  Summarize alpha diversity
+
+Estimate richness: 
+
+- Performs a number of standard alpha diversity estimates, and returns the results as a data.frame. 
+
+
+```{r estimate_richness, cache=TRUE, include=FALSE}
+
+richness_estimate <- estimate_richness(ps, split= TRUE, measures = NULL)
+richness_estimate
+
+
+```
+
+```{r estimate_richness_raref, cache=TRUE}
+
+richness_estimate_raref <- estimate_richness(ps_raref, split= TRUE, measures = NULL)
+richness_estimate_raref
+```
+
+
+## Comparing matrixes
+
+
+
+```{r import_Tree, cache=TRUE, include=FALSE}
+
+## We need to build a phylogenetic tree with the DADA2 sequences_
+
+#- A) Method for tree: Importing to phyloseq the rooted-tree we have created in Qiime2 from DADA2 data: 
+
+rooted_Dada2_Q2_tree <- read_tree ("./DADA2/treexported/tree.nwk")
+
+```
+
+
+```{r alignment_msa, cache=TRUE, include=FALSE}
+
+#- B) Method for tree: 
+#[Bioconductor workflow for microbiome data analysis: from raw reads to community analyses]https://f1000research.com/articles/5-1492/v2
+
+#- We begin by performing a multiple-alignment of the inferred sequences
+
+seqs <- getSequences(seqtab.nochim)
+names(seqs) <- seqs # this propagates to the tip labels of the tree
+alignment <- AlignSeqs(DNAStringSet(seqs), anchor=NA, verbose=FALSE)
+#mult <- msa(seqs, method="ClustalW", type="dna", order="input", verbose=TRUE)
+
+```
+
+```{r phangorn_Tree, cache=TRUE, include=FALSE}
+
+#The phangorn package is then used to construct a phylogenetic tree. 
+
+phang.align <- phyDat(as(alignment, "matrix"), type="DNA")
+dm <- dist.ml(phang.align)
+treeNJ <- NJ(dm) ## Note, tip order != sequence order
+fit =pml(treeNJ, data=phang.align)
+
+## negative edges length changed to 0!
+fitGTR <- update(fit, k=4, inv=0.2)
+#fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE, rearrangement ="stochastic", control =pml.control(trace=0))
+
+
+```
+
+```{r tree_phangorn, cache=TRUE, include=FALSE}
+#ps is gonna have the tree done with qiime2 (method A)
+#ps_copy2 is gonna include the tree done with ape (method C)
+
+phy_tree(fitGTR$tree) #esta unrooted.. 
+rooted_fitGTR <- midpoint(fitGTR$tree)
+rooted_fitGTR #rooted
+
+```
+
+
+```{r NJTree, cache=TRUE, include=FALSE}
+
+#C) METHOD build tree:  Following https://rpubs.com/dillmcfarlan/R_microbiotaSOP [link here](https://rpubs.com/dillmcfarlan/R_microbiotaSOP)
+
+NJ.tree = bionj(dm)
+
+```
+
+```{r root NJTree, cache=TRUE, include=FALSE}
+#NJ.tree is also unrooted: 
+rooted_NJ.tree <- midpoint(NJ.tree)
+
+```
+
+```{r trees_into_ps, cache=TRUE, include=FALSE}
+
+ps@phy_tree <- rooted_Dada2_Q2_tree
+phy_tree(ps)
+ps_copy2@phy_tree <- rooted_NJ.tree
+phy_tree(ps_copy2)
+ps_raref@phy_tree <- rooted_NJ.tree
+
+```
+
+###  Calculate unweighted UniFrac distance for all sample pairs.
+
+This function calculates the (Fast) UniFrac distance for all sample-pairs in a phyloseq-class object. We will use the phyloseq-class object with the rarefied otu table.
+
+```{r unweighted_Unifrac_raref_I, cache=TRUE, include=FALSE}
+
+ps_copy2_raref <- rarefy_even_depth(ps)
+sample_sums(ps_copy2_raref)
+
+
+```
+
+```{r unweighted_Unifrac_raref, cache=TRUE}
+
+DistUniFrac_dada2_ape <- UniFrac(ps_copy2, weighted=FALSE, normalized=TRUE, parallel=FALSE, fast=TRUE)
+
+```
+The package vegan is used to compare matrixes. 
+
+
+Path with path where our tables are: 
+
+```{r path2dm_tables, cache=TRUE}
+
+dm_tables_path <- "./COMPARING_DM/"
+
+#check if path and data included are ok: 
+list.files(dm_tables_path)
+
+```
+
+Importing to R the unweighted unifrac distance matrixes of Q1 and Q2:
+
+```{r importing_Q1&2_dm, cache=TRUE}
+
+dm_qiime1 <- read.table(paste(dm_tables_path, "q1_Md_Unifrac_dm.txt", sep=""))
+
+dm_qiime2 <- read.table(paste(dm_tables_path,"/q2_Md_Unifrac_dm.tsv", sep=""))
+
+
+```
+
+samples in the matrix must be equally sorted: 
+
+```{r sorting matrixes, cache=TRUE}
+
+dm_qiime1_sorted <- dm_qiime1[order(rownames(dm_qiime1), decreasing=TRUE),order(colnames(dm_qiime1), decreasing =TRUE)]
+dm_qiime2_sorted <- dm_qiime2[order(rownames(dm_qiime2), decreasing=TRUE),order(colnames(dm_qiime2), decreasing =TRUE)]
+
+
+```
+
+DADA2 Unifrac Matrixes: 
+DistUniFrac_dada2_ape and DistUnifrac_dada2_Q2 are objects type "dist" (distance).
+```{r class_DistUnifrac, cache=TRUE}
+
+class(DistUniFrac_dada2_ape)
+
+
+```
+
+
+We will transform them into matrixes objects, and then into dataframes:
+
+```{r dist_to_dataframe, cache=TRUE}
+
+my_DistUniFrac_ape <- as.matrix(DistUniFrac_dada2_ape, nrow=10, ncol=10)
+
+class(my_DistUniFrac_ape)
+
+dada2_Unifrac_ape <- as.data.frame(my_DistUniFrac_ape)
+
+class(dada2_Unifrac_ape)
+
+```
+
+```{r labels_matrixes, cache=TRUE, include=FALSE}
+#We need to replace the "_" for "." so the format of labels are the same in all tables.
+colnames(dada2_Unifrac_ape) = gsub("_", ".", colnames(dada2_Unifrac_ape))
+rownames(dada2_Unifrac_ape) = gsub("_", ".", rownames(dada2_Unifrac_ape))
+colnames(dada2_Unifrac_ape) = gsub("16S.W", "W", colnames(dada2_Unifrac_ape))
+rownames(dada2_Unifrac_ape) = gsub("16S.W", "W", rownames(dada2_Unifrac_ape))
+colnames(dada2_Unifrac_ape)
+rownames(dada2_Unifrac_ape)
+
+```
+
+
+Mantel Test for Matrixes Comparison:
+
+[Click here for info](https://mb3is.megx.net/gustame/hypothesis-tests/the-mantel-test)
+
+
+```{r MantelTest_Pearson, cache=TRUE}
+
+q1vsq2_P <- mantel(dm_qiime1_sorted, dm_qiime2_sorted, method="pearson", permutations=999)
+q1vsdada2_ape_P <- mantel(dm_qiime1_sorted, dada2_Unifrac_ape, method="pearson", permutations=999)
+q2vsdada2_ape_P <- mantel(dm_qiime2_sorted, dada2_Unifrac_ape, method="pearson", permutations=999)
+
+```
+
+```{r MantelTest_Spearman, cache=TRUE}
+
+q1vsq2_S <- mantel(dm_qiime1_sorted, dm_qiime2_sorted, method="spearman", permutations=999)
+q1vsdada2_ape_S <- mantel(dm_qiime1_sorted, dada2_Unifrac_ape, method="spearman", permutations=999)
+q2vsdada2_ape_S <- mantel(dm_qiime2_sorted, dada2_Unifrac_ape, method="spearman", permutations=999)
+
+```
+
+
+```{r mantelsummary}
+mantelsummary <- read.csv("./COMPARING_DM/Mantel_Unifrac_Results.csv")
+mantelsummary
+```
+
+
+### comparing Bray Curtis matrixes
+
+Import Q1 otu table, to produce the bray_curtis with phyloseq and check if its the same than the produced with q1 in the terminal
+
+
+```{r Q1_bray}
+
+q1_otu_table <- import_biom("./QIIMEI/otus/otu_table_mc2_w_tax_no_pynast_failures.biom")
+
+# Make it from Rarefied cdout/table_7786 algo (comprobar) 
+q1_otu_table_raref <- import_biom("./QIIMEI/cdout/table_even7786.biom")
+
+q1_bray_dm <- phyloseq::distance(q1_otu_table, method="bray")     #q1_bray_dm is a "dist" type object.
+q1_bray_dm_raref <- phyloseq::distance(q1_otu_table_raref, method="bray")
+class(q1_bray_dm)
+class(q1_bray_dm_raref)                            
+```
+
+
+the core_metrics diversity in Q1 doesn't give the beta_diversity metrics, we can obtain it with beta_diversity.py
+from the rarefied otu table: 
+
+
+```{bash converting_biom, eval=FALSE, include=FALSE}
+
+biom convert -i cdout/table_even7786.biom -o tablefrom_table_even7786.txt --to-tsv)
+
+```
+
+we can include metadata
+
+```{bash convert_biom_metadata}
+
+$QIIME1
+biom convert -i $PATH_Q1/cdout/table_even7786.biom -o $PATH_Q1/tablefrom_table_even7786_with_taxonomy.txt --to-tsv --header-key taxonomy
+
+```
+
+bray_curtis in the terminal with Q1:
+
+```{bash beta_diversity_Q1, eval=FALSE}
+
+$QIIME1
+beta_diversity.py -i $PATH_Q1/cdout/table_even7786.biom -m bray_curtis -o $PATH_Q1/beta_diversity_raref
+
+```
+
+
+### Import to R  Bray matrixes done in Q1 and Q2
+
+
+```{r import Q1_bray_dm, cache=TRUE}
+
+q1_bray_raref_imported <- read.table("./QIIMEI/beta_diversity_raref/bray_curtis_table_even7786.txt")
+
+```
+
+```{r import Q2_bray_dm, cache=TRUE}
+
+q2_bray_dm <- read.table("./COMPARING_DM/Q2_bray.tsv")
+
+```
+
+
+```{r BrayDM_DADA2, cache=TRUE}
+
+
+dada2_bray <-phyloseq::distance(ps_raref, method = "bray")
+class(dada2_bray)
+
+my_dada2_bray_matrix <- as.matrix(dada2_bray, nrow=10, ncol=10)
+class(my_dada2_bray_matrix)
+
+dada2_bray_dm <- as.data.frame(my_dada2_bray_matrix)
+class(dada2_bray_dm)
+
+
+```
+
+
+
+```{r sort_Bray_tables, include=FALSE}
+
+#Preparing the tables as data.frames ready to be comparable:
+
+bray_q1_sorted <- q1_bray_raref_imported[order(rownames(q1_bray_raref_imported), decreasing=TRUE),order(colnames(q1_bray_raref_imported), decreasing =TRUE)]
+
+bray_q2_sorted <- q2_bray_dm[order(rownames(q2_bray_dm), decreasing=TRUE),order(colnames(q2_bray_dm), decreasing =TRUE)]
+
+bray_dada2_sorted <- dada2_bray_dm[order(rownames(dada2_bray_dm), decreasing=TRUE),order(colnames(dada2_bray_dm), decreasing =TRUE)]
+
+
+```
+
+```{r labels_bray_matrixes, cache=TRUE}
+
+#We need to replace the "_" for "." so the format of labels are the same in all tables.
+colnames(bray_dada2_sorted)
+colnames(bray_dada2_sorted) = gsub("16S_", "", colnames(bray_dada2_sorted))
+
+colnames(bray_dada2_sorted)= gsub("_",".", colnames(bray_dada2_sorted))
+
+rownames(bray_dada2_sorted) = gsub("16S_", "", rownames(bray_dada2_sorted))
+
+rownames(bray_dada2_sorted)= gsub("_",".", rownames(bray_dada2_sorted))
+
+
+```
+
+
+Comparing Bray Matrixes: 
+
+```{r Bray_MantelTest_Pearson, cache=TRUE}
+
+Bray_q1vsq2_P <- mantel(bray_q1_sorted, bray_q2_sorted, method="pearson", permutations=999)
+
+Bray_q1vsdada2_P <- mantel(bray_q1_sorted, bray_dada2_sorted, method="pearson", permutations=999)
+
+Bray_q2vsdada2_P <- mantel(bray_q2_sorted, bray_dada2_sorted, method="pearson", permutations=999)
+
+```
+
+```{r Bray_MantelTest_Spearman, cache=TRUE}
+
+Bray_q1vsq2_S <- mantel(bray_q1_sorted, bray_q2_sorted, method="spearman", permutations=999)
+
+Bray_q1vsdada2_S <- mantel(bray_q1_sorted, bray_dada2_sorted, method="spearman", permutations=999)
+
+Bray_q2vsdada2_S <- mantel(bray_q2_sorted, bray_dada2_sorted, method="spearman", permutations=999)
+
+```
+
+
+# Comparing Alpha_Diversity in Q1, Q2 and DADA2
+
+
+```{r Q1_alpha_indexes, cache=TRUE, include=FALSE}
+
+my_Q1_alpha_diversity <- read.table("./QIIMEI/alphadiv_comp.txt")
+
+#check the length of the dataframe,  so you can make a same-length new column
+
+
+length(my_Q1_alpha_diversity$chao1)
+
+#creating the new column
+
+Category <- c("Streptomycin", "Streptomycin", "None", "None", "None", "None", "None", "Streptomycin", "Streptomycin", "Streptomycin")
+
+#paste it to the data frame
+
+my_Q1_alpha_diversity$AntibioticUsage <- Category
+
+#we say it is a factor if the case
+my_Q1_alpha_diversity$AntibioticUsage<-as.factor(my_Q1_alpha_diversity$AntibioticUsage)
+
+#I'm gonna do the same for the samples
+
+Samples.ids <- rownames(my_Q1_alpha_diversity)
+#Samples.ids
+my_Q1_alpha_diversity$Sample <- Samples.ids
+my_Q1_alpha_diversity$Sample <- as.factor(my_Q1_alpha_diversity$Sample)
+my_Q1_alpha_diversity
+```
+
+
+Plotting the Q1 alpha diversity indexes:
+
+```{r plot_Q1_alpha_div, cache=TRUE}
+
+ggplot(my_Q1_alpha_diversity, aes(AntibioticUsage, my_Q1_alpha_diversity$chao1))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=chao1, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Chao1") + theme(panel.background = NULL)
+
+
+ggplot(my_Q1_alpha_diversity, aes(AntibioticUsage, my_Q1_alpha_diversity$shannon))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=shannon, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Shannon") + theme(panel.background = NULL)
+
+
+ggplot(my_Q1_alpha_diversity, aes(AntibioticUsage, my_Q1_alpha_diversity$observed_otus))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=observed_otus, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Observed OTUs") + theme(panel.background = NULL)
+
+
+ggplot(my_Q1_alpha_diversity, aes(AntibioticUsage, my_Q1_alpha_diversity$PD_whole_tree))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=PD_whole_tree, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Faith PD") + theme(panel.background = NULL)
+
+  
+
+```
+
+
+
+- Importing Q2 data
+
+
+Alpha diversity measures in Q2 were calculated and exported from visualization.qzv object, we first exported it to get the table with the alpha diversity index, and then import it to R with the following:
+
+```{r Q2_alpha_indexes, cache=TRUE}
+
+Q2_mi_alpha_diversity <- read.table("./QIIME2/alpha_Q2.csv", header=TRUE)
+
+```
+
+
+Plotting the Q2 alpha diversity indexes:
+
+```{r plot_Q2_alpha_div, cache=TRUE}
+
+ggplot(Q2_mi_alpha_diversity, aes(AntibioticUsage, Q2_mi_alpha_diversity$chao1))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=chao1, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Chao1") + theme(panel.background = NULL)
+
+
+ggplot(Q2_mi_alpha_diversity, aes(AntibioticUsage, Q2_mi_alpha_diversity$Shannon))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=Shannon, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Shannon") + theme(panel.background = NULL)
+
+
+ggplot(Q2_mi_alpha_diversity, aes(AntibioticUsage, Q2_mi_alpha_diversity$observed_otus))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=observed_otus, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Observed OTUs") + theme(panel.background = NULL)
+
+
+ggplot(Q2_mi_alpha_diversity, aes(AntibioticUsage, Q2_mi_alpha_diversity$faith_PD))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=faith_PD, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Faith PD") + theme(panel.background = NULL)
+
+
+```
+
+
+
+DADA2 Alpha diversity
+
+We  already have the dataframe from "estimate richness"" command of phyloseq
+Let's create a copy of it to work from now and on:
+
+```{r DADA2_alpha_indexes, cache=TRUE}
+
+Dada2_alpha_diversity <- richness_estimate
+
+#comparison of alpha diversity using richness estimated from ps object with rarefied OTU table: 
+
+Dada2_alpha_diversity_raref <- richness_estimate_raref
+
+
+```
+
+The alpha_diversity indexes obtained, are very similar, but we will go on with the results obtained using the rarefacted OTU_table, for better homogeneity in the procedures with Q1 and Q2
+
+lets add the factor Antibiotic Usage column:
+
+```{r DADA2_alpha_indexes_II, cache=TRUE}
+
+#creating the new column
+
+#just in case we didnt do this before and is not in our environment)
+Category <- c("Streptomycin", "Streptomycin", "None", "None", "None", "None", "None", "Streptomycin", "Streptomycin", "Streptomycin")
+
+#or we can paste it from Q2 dataframe to the dada2 dataframe
+Dada2_alpha_diversity_raref$AntibioticUsage <- Q2_mi_alpha_diversity$AntibioticUsage
+Dada2_alpha_diversity_raref
+
+
+```
+
+
+```{r pd_function, cache=TRUE, include=FALSE}
+
+#In Phyloseq the richness estimate command doesn't calculate the Faith Phylogenetic Diversity. For this purpose, we will use the "picante" package.
+#The pd function returns two values for each community, Faith's PD and species richness  (SR) (the last, we already have it == Observed OTUs)
+
+
+otu_raref_dada2 <- as.data.frame(ps_raref@otu_table)
+dim(otu_raref_dada2)
+dim(ps_raref@otu_table)
+
+comm.pd <- pd(seqtab.nochim, ps@phy_tree)
+comm.pd
+comm.pd_raref <- pd(otu_raref_dada2, ps@phy_tree)
+comm.pd_raref
+
+#Same result, so we can:
+# we now add the PD value to our dataframe with alpha diversity measures for DADA2
+
+Dada2_alpha_diversity_raref$faith_pd <- comm.pd$PD 
+
+
+```
+
+
+Plotting the DADA2 alpha diversity indexes:
+
+```{r plot_DADA2_alpha_div, cache=TRUE}
+
+ggplot(Dada2_alpha_diversity_raref, aes(AntibioticUsage, Dada2_alpha_diversity_raref$Chao1))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=Chao1, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Chao1") + theme(panel.background = NULL)
+
+
+ggplot(Dada2_alpha_diversity_raref, aes(AntibioticUsage, Dada2_alpha_diversity_raref$Shannon))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=Shannon, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Shannon") + theme(panel.background = NULL)
+
+
+ggplot(Dada2_alpha_diversity_raref, aes(AntibioticUsage, Dada2_alpha_diversity_raref$Observed))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=Observed, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Observed OTUs") + theme(panel.background = NULL)
+
+
+ggplot(Dada2_alpha_diversity_raref, aes(AntibioticUsage, Dada2_alpha_diversity_raref$faith_pd))+
+  geom_dotplot(aes(x=AntibioticUsage, 
+                   y=faith_pd, 
+                   fill=AntibioticUsage,
+                   col=AntibioticUsage),
+               
+               #show.legend = FALSE,
+               binaxis="y",
+               stackdir ="center", dotsize = 1)+
+  geom_boxplot(alpha=.3, 
+                outlier.shape=20, outlier.color="red", 
+                outlier.size=4)+
+  ylab("Faith PD") + theme(panel.background = NULL)
+
+
+
+``` 
+
+
+We will now test the differences between the Antibiotic Usage groups, performing the Wilcoxon test
+
+
+```{r variables_AntibUsage, include=FALSE}
+
+#looking for the samples that are not treated:
+which_none_Q1 <- which(my_Q1_alpha_diversity$AntibioticUsage=="None")
+which_none_Q1
+my_Q1_alpha_diversity$chao1[which_none_Q1]
+my_Q1_alpha_diversity$chao1[-which_none_Q1]
+
+which_none_Q2 <- which(Q2_mi_alpha_diversity$AntibioticUsage=="None")
+which_none_Q2
+
+which_none_Dada2 <- which(Dada2_alpha_diversity_raref$AntibioticUsage=="None")
+which_none_Dada2
+
+
+```
+
+
+```{r Wilcox_tests, cache=TRUE, include=FALSE}
+
+#Wilcoxon Tests
+
+#Q1
+
+chao1_wilcox_Q1 <- wilcox.test (my_Q1_alpha_diversity$chao1[which_none_Q1], my_Q1_alpha_diversity$chao1[-which_none_Q1])
+
+shannon_wilcox_Q1 <- wilcox.test (my_Q1_alpha_diversity$shannon[which_none_Q1], my_Q1_alpha_diversity$shannon[-which_none_Q1])
+
+otus_observed_wilcox_Q1 <- wilcox.test (my_Q1_alpha_diversity$observed_otus[which_none_Q1], my_Q1_alpha_diversity$observed_otus[-which_none_Q1])
+
+faith_PD_wilcox_Q1 <- wilcox.test (my_Q1_alpha_diversity$PD_whole_tree[which_none_Q1], my_Q1_alpha_diversity$PD_whole_tree[-which_none_Q1])
+
+
+#Q2
+
+chao1_wilcox_Q2 <- wilcox.test (Q2_mi_alpha_diversity$chao1[which_none_Q2],Q2_mi_alpha_diversity$chao1[-which_none_Q2])
+
+shannon_wilcox_Q2 <- wilcox.test (Q2_mi_alpha_diversity$Shannon[which_none_Q2], Q2_mi_alpha_diversity$Shannon[-which_none_Q2])
+
+otus_observed_wilcox_Q2 <- wilcox.test (Q2_mi_alpha_diversity$observed_otus[which_none_Q2], Q2_mi_alpha_diversity$observed_otus[-which_none_Q2])
+
+faith_PD_wilcox_Q2 <- wilcox.test (Q2_mi_alpha_diversity$faith_PD[which_none_Q2], Q2_mi_alpha_diversity$faith_PD[-which_none_Q2])
+
+
+#DADA2
+
+chao1_wilcox_dada2 <- wilcox.test(Dada2_alpha_diversity_raref$Chao1[which_none_Dada2], Dada2_alpha_diversity_raref$Chao1[-which_none_Dada2])
+
+shannon_wilcox_dada2 <- wilcox.test(Dada2_alpha_diversity_raref$Shannon[which_none_Dada2], Dada2_alpha_diversity_raref$Shannon[-which_none_Dada2])
+
+
+observed_wilcox_dada2 <- wilcox.test(Dada2_alpha_diversity_raref$Observed[which_none_Dada2], Dada2_alpha_diversity_raref$Observed[-which_none_Dada2])
+
+
+faith_wilcox_dada2 <- wilcox.test(Dada2_alpha_diversity_raref$faith_pd[which_none_Dada2], Dada2_alpha_diversity_raref$faith_pd[-which_none_Dada2])
+
+
+```
+
+
+
+```{r Wilcox_tests_results, cache=TRUE, include=FALSE}
+
+#Wilcoxon Results:
+
+chao1_wilcox_Q1
+chao1_wilcox_Q2
+chao1_wilcox_dada2
+
+shannon_wilcox_Q1
+shannon_wilcox_Q2
+shannon_wilcox_dada2
+
+otus_observed_wilcox_Q1
+otus_observed_wilcox_Q2
+observed_wilcox_dada2
+
+faith_PD_wilcox_Q1
+faith_PD_wilcox_Q2
+faith_wilcox_dada2
+
+
+```
+
+## Comparing the taxonomic assignments among the different softwares
+
+- Q1 uses an open-reference OTU picking process, reads are clustered against a reference sequence collection and any reads which do not hit the reference sequence collection are subsequently clustered de novo 
+
+(*used the 97% GREEN-GENES database) 
+
+- Q2: used DADA2 Amplicon Squence Variants. Later, the taxonomic assignment was performed with the classifier trained with 
+
+Greengenes 13_8 99% OTUs full-length sequences
+
+- Representing with Venn Diagrams the different methods detection of taxa among  taxonomic levels:
+
+- DADA2: uses ASVs, taxonomic assignment vs Silva Reference
+
+Build summary tables in OTU_SUMMARIES folder, and then: 
+
+```{r Venn_Diagrams, include=FALSE}
+
+# we re gonna assume that 
+# ";Other" in Q1 == ";_" in Q2
+
+level2_abs <- read.table("./OTU_SUMMARIES/Level2_ABS_dataframe.txt", header=TRUE)
+head(level2_abs)
+level2_abs
+
+
+vs_lvl2 <- Venn(Sets = list(QIIME1=which(level2_abs$Q1 != 0), QIIME2=which(level2_abs$Q2 != 0), DADA2=which(level2_abs$DADA2 != 0)))
+level2_abs$OTU_ID[which(level2_abs$Q1!=0 & level2_abs$Q2 != 0 & level2_abs$DADA2 != 0)]
+
+# plot(vs_test, type="circles")
+
+lv2 <- compute.Venn(vs_lvl2, doWeights = FALSE) #doesnt work with weights
+gp2 <- VennThemes(lv2)
+gp2[["Face"]][["100"]]$fill <- "lightgreen"
+
+gp2[["Face"]][["010"]]$fill <- "lightblue"
+
+gp2[["Face"]][["001"]]$fill <- "salmon"
+
+
+#level 3
+
+level3_abs <- read.table("./OTU_SUMMARIES/Level3_ABS_dataframe.txt", header=TRUE)
+head(level3_abs)
+level3_abs
+vs_lv3 <- Venn(Sets = list(QIIME1=which(level3_abs$Q1 != 0), QIIME2=which(level3_abs$Q2 != 0), DADA2=which(level3_abs$DADA2 != 0)))
+
+level3_abs$OTU_ID[which(level3_abs$Q1!=0 & level3_abs$Q2 != 0 & level3_abs$DADA2 != 0)]
+
+plot(vs_lv3, type="circles")
+
+lv3 <- compute.Venn(vs_lv3)
+gp3 <- VennThemes(lv3)
+
+gp3[["Face"]][["100"]]$fill <- "lightgreen"
+gp3[["Face"]][["010"]]$fill <- "lightblue"
+gp3[["Face"]][["001"]]$fill <- "salmon"
+
+
+
+#level 4
+
+level4_abs <- read.table("./OTU_SUMMARIES/Level4_ABS_dataframe.txt", header=TRUE)
+head(level4_abs)
+level4_abs
+vs_lv4 <- Venn(Sets = list(QIIME1=which(level4_abs$Q1 != 0), QIIME2=which(level4_abs$Q2 != 0), DADA2=which(level4_abs$DADA2 != 0)))
+level4_abs$OTU_ID[which(level4_abs$Q1!=0 & level4_abs$Q2 != 0 & level4_abs$DADA2 != 0)]
+
+# plot(vs_lv4, type="circles")
+
+lv4 <- compute.Venn(vs_lv4)
+gp4 <- VennThemes(lv4)
+
+gp4[["Face"]][["100"]]$fill <- "lightgreen"
+gp4[["Face"]][["010"]]$fill <- "lightblue"
+gp4[["Face"]][["001"]]$fill <- "salmon"
+
+
+#level 5
+
+level5_abs <- read.table("./OTU_SUMMARIES/Level5_ABS_dataframe.txt", header=TRUE)
+head(level5_abs)
+level5_abs
+vs_lv5 <- Venn(Sets = list(QIIME1=which(level5_abs$Q1 != 0), QIIME2=which(level5_abs$Q2 != 0), DADA2=which(level5_abs$DADA2 != 0)))
+
+level5_abs$OTU_ID[which(level5_abs$Q1!=0 & level5_abs$Q2 != 0 & level5_abs$DADA2)]
+
+# plot(vs_lv5, type="circles")
+
+lv5 <- compute.Venn(vs_lv5)
+gp5 <- VennThemes(lv5)
+
+gp5[["Face"]][["100"]]$fill <- "lightgreen"
+gp5[["Face"]][["010"]]$fill <- "lightblue"
+gp5[["Face"]][["001"]]$fill <- "salmon"
+
+#level 6
+
+level6_abs <- read.table("./OTU_SUMMARIES/Level6_ABS_dataframe.txt", header=TRUE)
+head(level6_abs)
+level6_abs
+vs_lv6 <- Venn(Sets = list(QIIME1=which(level6_abs$Q1 != 0), QIIME2=which(level6_abs$Q2 != 0), DADA2=which(level6_abs$DADA2 != 0)))
+
+level6_abs$OTU_ID[which(level6_abs$Q1!=0 & level6_abs$Q2 != 0 & level6_abs$DADA2 != 0)]
+
+# plot(vs_lv6, type="circles")
+
+lv6 <- compute.Venn(vs_lv6)
+gp6 <- VennThemes(lv6)
+
+gp6[["Face"]][["100"]]$fill <- "lightgreen"
+gp6[["Face"]][["010"]]$fill <- "lightblue"
+gp6[["Face"]][["001"]]$fill <- "salmon"
+
+
+#level 7
+level7_abs <- read.table("./OTU_SUMMARIES/Level7_ABS_dataframe.txt", header=TRUE)
+head(level7_abs)
+level7_abs
+vs_lv7 <- Venn(Sets = list(QIIME1=which(level7_abs$Q1 != 0), QIIME2=which(level7_abs$Q2 != 0), DADA2=which(level7_abs$DADA2 != 0)))
+
+level7_abs$OTU_ID[which(level7_abs$Q1!=0 & level7_abs$Q2 != 0 & level7_abs$DADA2 != 0)]
+
+# plot(vs_lv7, type="circles")
+
+lv7 <- compute.Venn(vs_lv7)
+gp7 <- VennThemes(lv7)
+
+gp7[["Face"]][["100"]]$fill <- "lightgreen"
+gp7[["Face"]][["010"]]$fill <- "lightblue"
+gp7[["Face"]][["001"]]$fill <- "salmon"
+
+```
+
+```{r plot_Venn}
+
+
+grid.newpage()
+plot(lv2,gp=gp2)
+grid.text("Phylum", x=0.2, y=0.9)
+
+grid.newpage()
+plot(lv3, gp=gp3)
+grid.text("Class", x=0.21, y=0.9)
+
+grid.newpage()
+plot(lv4, gp=gp4)
+grid.text("Order", x=0.22, y=0.9)
+
+grid.newpage()
+plot(lv5, gp=gp5)
+grid.text("Family", x=0.22, y=0.9)
+
+grid.newpage()
+plot(lv6, gp=gp6) 
+grid.text("Genus", x=0.25, y=0.9)
+
+grid.newpage()
+plot(lv7, gp=gp7) 
+grid.text("Species", x=0.25, y=0.9)
+
+
+```
+
+
+
+##  bar plots of different taxas for each method
+
+```{r Shortening_OTUnames, include=FALSE}
+
+
+#SHORTENING THE NAMES!! 
+Short_OTU_lv7 <- read.table ("./OTU_SUMMARIES/L7_shortnames.txt", header=FALSE)
+Short_OTU_lv6 <- read.table ("./OTU_SUMMARIES/L6_shortnames.txt", header=FALSE)
+Short_OTU_lv5 <- read.table ("./OTU_SUMMARIES/L5_shortnames.txt", header=FALSE)
+Short_OTU_lv4 <- read.table ("./OTU_SUMMARIES/L4_shortnames.txt", header=FALSE)
+Short_OTU_lv3 <- read.table ("./OTU_SUMMARIES/L3_shortnames.txt", header=FALSE)
+
+
+level7_abs_s <- level7_abs
+level6_abs_s <- level6_abs
+level5_abs_s <- level5_abs
+level4_abs_s <- level4_abs
+level3_abs_s <- level3_abs
+
+#change the OTU_IDs for Short OTU_IDs in level6_abs_s (short)
+
+level7_abs_s$OTU_ID <- Short_OTU_lv7$V1
+level6_abs_s$OTU_ID <- Short_OTU_lv6$V1
+level5_abs_s$OTU_ID <- Short_OTU_lv5$V1
+level4_abs_s$OTU_ID <- Short_OTU_lv4$V1
+level3_abs_s$OTU_ID <- Short_OTU_lv3$V1
+
+```
+
+
+
+
+```{r plot_taxa_bars, include=FALSE}
+
+library('reshape2')
+
+level2_abs.m <- melt(level2_abs, id.vars='OTU_ID')
+level3_abs.m <- melt(level3_abs_s, id.vars='OTU_ID')
+level4_abs.m <- melt(level4_abs_s, id.vars='OTU_ID')
+level5_abs.m <- melt(level5_abs_s, id.vars='OTU_ID')
+level6_abs.m <- melt(level6_abs_s, id.vars='OTU_ID')
+level7_abs.m <- melt(level7_abs_s, id.vars='OTU_ID')
+
+#function to ggplot
+
+my_plot_abs_func <- function(my_df, title="") {
+  ggplot(my_df, aes(x=OTU_ID, y=value)) + 
+    scale_y_log10()+
+    geom_bar(aes(fill = variable), 
+             width = 0.4, position = position_dodge(width=0.5), stat="identity") +
+    ggtitle(title)+
+    theme(legend.position="top", legend.title = element_blank(),
+          axis.title.x=element_blank(), 
+          axis.title.y=element_blank(),
+          axis.text.x=element_text(size=8,angle=90, hjust = 1)
+    ) 
+}
+
+#call the function while I set a variable for the plots product
+plot_lv2_abs <- my_plot_abs_func(level2_abs.m, title="Level 2: Phylum Absolute Count")
+plot_lv3_abs <- my_plot_abs_func(level3_abs.m, title="Level 3: Class Absolute Count")
+plot_lv4_abs <- my_plot_abs_func(level4_abs.m, title="Level 4: Order Absolute Count")
+plot_lv5_abs <- my_plot_abs_func(level5_abs.m, title="Level 5: Family Absolute Count")
+plot_lv6_abs <- my_plot_abs_func(level6_abs.m, title="Level 6: Genus Absolute Count")
+plot_lv7_abs <- my_plot_abs_func(level7_abs.m, title="Level 7: Species Absolute Count")
+
+plot_lv2_abs
+plot_lv3_abs
+plot_lv4_abs
+plot_lv5_abs
+plot_lv6_abs
+plot_lv7_abs
+
+#log10(0) = - infinite thats why the scale is not adjusted in Unassigned values.
+
+```
+
+- Relative Freq: 
+
+```{r plot_rel_freq, include=FALSE}
+
+#in the excel file, change "," for "."
+
+
+level2_rel <- read.table("./OTU_SUMMARIES/Level2_REL_dataframe.txt", header=TRUE)
+#head(level2_rel)
+level3_rel <- read.table("./OTU_SUMMARIES/Level3_REL_dataframe.txt", header=TRUE)
+level4_rel <- read.table("./OTU_SUMMARIES/Level4_REL_dataframe.txt", header=TRUE)
+level5_rel <- read.table("./OTU_SUMMARIES/Level5_REL_dataframe.txt", header=TRUE)
+level6_rel <- read.table("./OTU_SUMMARIES/Level6_REL_dataframe.txt", header=TRUE)
+level7_rel <- read.table("./OTU_SUMMARIES/Level7_REL_dataframe.txt", header=TRUE)
+
+level7_rel_s <- level7_rel
+level6_rel_s <- level6_rel
+level5_rel_s <- level5_rel
+level4_rel_s <- level4_rel
+level3_rel_s <- level3_rel
+
+#change the OTU_IDs for Short OTU_IDs in level6_abs_s (short)
+
+
+level7_rel_s$OTU_ID <- Short_OTU_lv7$V1
+level6_rel_s$OTU_ID <- Short_OTU_lv6$V1
+level5_rel_s$OTU_ID <- Short_OTU_lv5$V1
+level4_rel_s$OTU_ID <- Short_OTU_lv4$V1
+level3_rel_s$OTU_ID <- Short_OTU_lv3$V1
+level2_rel_s <- level2_rel
+
+# #level2_rel.m
+level2_rel.m <- melt(level2_rel_s, id.vars='OTU_ID')
+# level3_rel.m <- melt(level3_rel_s, id.vars='OTU_ID')
+# level4_rel.m <- melt(level4_rel_s, id.vars='OTU_ID')
+# level5_rel.m <- melt(level5_rel_s, id.vars='OTU_ID')
+# level6_rel.m <- melt(level6_rel_s, id.vars='OTU_ID')
+
+
+```
+
+
+
+```{r rel_top10_picker, include=FALSE}
+
+#Picking the top 10 taxa for each method: 
+
+
+level2_rel_top <- level2_rel
+level3_rel_top <- level3_rel_s
+level4_rel_top <- level4_rel_s
+level5_rel_top <- level5_rel_s
+level6_rel_top <- level6_rel_s
+level7_rel_top <- level7_rel_s
+
+# level3_rel_top
+level2_rel_top$OTU_ID <- as.character(level2_rel_top$OTU_ID)
+level3_rel_top$OTU_ID <- as.character(level3_rel_top$OTU_ID)
+level4_rel_top$OTU_ID <- as.character(level4_rel_top$OTU_ID)
+level5_rel_top$OTU_ID <- as.character(level5_rel_top$OTU_ID)
+level6_rel_top$OTU_ID <- as.character(level6_rel_top$OTU_ID)
+level7_rel_top$OTU_ID <- as.character(level7_rel_top$OTU_ID)
+
+level5_rel_top$OTU_ID
+
+# is.factor(level3_rel_top$OTU_ID)                                     
+
+level2_rel_top_Q1 <- level2_rel_top[order(level2_rel_top[,2],decreasing=TRUE),]
+level3_rel_top_Q1 <- level3_rel_top[order(level3_rel_top[,2],decreasing=TRUE),]
+level4_rel_top_Q1 <- level4_rel_top[order(level4_rel_top[,2],decreasing=TRUE),]
+level5_rel_top_Q1 <- level5_rel_top[order(level5_rel_top[,2],decreasing=TRUE),]
+level6_rel_top_Q1 <- level6_rel_top[order(level6_rel_top[,2],decreasing=TRUE),]
+level7_rel_top_Q1 <- level7_rel_top[order(level7_rel_top[,2],decreasing=TRUE),]
+
+
+# level3_rel_top_Q1
+
+level2_rel_top_Q2 <- level2_rel_top[order(level2_rel_top[,3],decreasing=TRUE),]
+level3_rel_top_Q2 <- level3_rel_top[order(level3_rel_top[,3],decreasing=TRUE),]
+level4_rel_top_Q2 <- level4_rel_top[order(level4_rel_top[,3],decreasing=TRUE),]
+level5_rel_top_Q2 <- level5_rel_top[order(level5_rel_top[,3],decreasing=TRUE),]
+level6_rel_top_Q2 <- level6_rel_top[order(level6_rel_top[,3],decreasing=TRUE),]
+level7_rel_top_Q2 <- level7_rel_top[order(level7_rel_top[,3],decreasing=TRUE),]
+
+# level3_rel_top_Q2
+
+level2_rel_top_DADA2 <- level2_rel_top[order(level2_rel_top[,4],decreasing=TRUE),]
+level3_rel_top_DADA2 <- level3_rel_top[order(level3_rel_top[,4],decreasing=TRUE),]
+level4_rel_top_DADA2 <- level4_rel_top[order(level4_rel_top[,4],decreasing=TRUE),]
+level5_rel_top_DADA2 <- level5_rel_top[order(level5_rel_top[,4],decreasing=TRUE),]
+level6_rel_top_DADA2 <- level6_rel_top[order(level6_rel_top[,4],decreasing=TRUE),]
+level7_rel_top_DADA2 <- level7_rel_top[order(level7_rel_top[,4],decreasing=TRUE),]
+
+#level3_rel_top_DADA2
+
+#sum the worst XD
+rest_lv2_Q1 <- sum(level2_rel_top_Q1$Q1[-(1:10)])
+rest_lv3_Q1 <- sum(level3_rel_top_Q1$Q1[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_Q1 <- sum(level4_rel_top_Q1$Q1[-(1:10)])
+rest_lv5_Q1 <- sum(level5_rel_top_Q1$Q1[-(1:10)])
+rest_lv6_Q1 <- sum(level6_rel_top_Q1$Q1[-(1:10)])
+rest_lv7_Q1 <- sum(level7_rel_top_Q1$Q1[-(1:10)])
+
+rest_lv3_Q1
+
+rest_lv2_Q2 <- sum(level2_rel_top_Q2$Q2[-(1:10)])
+rest_lv3_Q2 <- sum(level3_rel_top_Q2$Q2[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_Q2 <- sum(level4_rel_top_Q2$Q2[-(1:10)])
+rest_lv5_Q2 <- sum(level5_rel_top_Q2$Q2[-(1:10)])
+rest_lv6_Q2 <- sum(level6_rel_top_Q2$Q2[-(1:10)])
+rest_lv7_Q2 <- sum(level7_rel_top_Q2$Q2[-(1:10)])
+
+rest_lv4_Q2
+
+rest_lv2_DADA2 <- sum(level2_rel_top_DADA2$DADA2[-(1:10)])
+rest_lv3_DADA2 <- sum(level3_rel_top_DADA2$DADA2[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_DADA2 <- sum(level4_rel_top_DADA2$DADA2[-(1:10)])
+rest_lv5_DADA2 <- sum(level5_rel_top_DADA2$DADA2[-(1:10)])
+rest_lv6_DADA2 <- sum(level6_rel_top_DADA2$DADA2[-(1:10)])
+rest_lv7_DADA2 <- sum(level7_rel_top_DADA2$DADA2[-(1:10)])
+
+rest_lv4_DADA2
+
+
+lv2_Rel_Freq= c(level2_rel_top_Q1$Q1[(1:10)], rest_lv2_Q1, level2_rel_top_Q2$Q2[(1:10)], rest_lv2_Q2, level2_rel_top_DADA2$DADA2[(1:10)], rest_lv2_DADA2)
+lv3_Rel_Freq= c(level3_rel_top_Q1$Q1[(1:10)], rest_lv3_Q1, level3_rel_top_Q2$Q2[(1:10)], rest_lv3_Q2, level3_rel_top_DADA2$DADA2[(1:10)], rest_lv3_DADA2)
+lv4_Rel_Freq= c(level4_rel_top_Q1$Q1[(1:10)], rest_lv4_Q1, level4_rel_top_Q2$Q2[(1:10)], rest_lv4_Q2, level4_rel_top_DADA2$DADA2[(1:10)], rest_lv4_DADA2)
+lv5_Rel_Freq= c(level5_rel_top_Q1$Q1[(1:10)], rest_lv5_Q1, level5_rel_top_Q2$Q2[(1:10)], rest_lv5_Q2, level5_rel_top_DADA2$DADA2[(1:10)], rest_lv5_DADA2)
+lv6_Rel_Freq= c(level6_rel_top_Q1$Q1[(1:10)], rest_lv6_Q1, level6_rel_top_Q2$Q2[(1:10)], rest_lv6_Q2, level6_rel_top_DADA2$DADA2[(1:10)], rest_lv6_DADA2)
+lv7_Rel_Freq= c(level7_rel_top_Q1$Q1[(1:10)], rest_lv7_Q1, level7_rel_top_Q2$Q2[(1:10)], rest_lv7_Q2, level7_rel_top_DADA2$DADA2[(1:10)], rest_lv7_DADA2)
+
+
+lv3_Rel_Freq
+
+lv2_sorted_top_OTU_ID_Q1 <- level2_rel_top_Q1$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_Q1 <- level3_rel_top_Q1$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_Q1 <- level4_rel_top_Q1$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_Q1 <- level5_rel_top_Q1$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_Q1 <- level6_rel_top_Q1$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_Q1 <- level7_rel_top_Q1$OTU_ID[(1:10)]
+
+
+lv2_sorted_top_OTU_ID_Q2 <- level2_rel_top_Q2$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_Q2 <- level3_rel_top_Q2$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_Q2 <- level4_rel_top_Q2$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_Q2 <- level5_rel_top_Q2$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_Q2 <- level6_rel_top_Q2$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_Q2 <- level7_rel_top_Q2$OTU_ID[(1:10)]
+
+lv2_sorted_top_OTU_ID_DADA2 <- level2_rel_top_DADA2$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_DADA2 <- level3_rel_top_DADA2$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_DADA2 <- level4_rel_top_DADA2$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_DADA2 <- level5_rel_top_DADA2$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_DADA2 <- level6_rel_top_DADA2$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_DADA2 <- level7_rel_top_DADA2$OTU_ID[(1:10)]
+
+
+is.factor(lv3_sorted_top_OTU_ID_Q2)
+
+lv2_sorted_OTUs <- c(lv2_sorted_top_OTU_ID_Q1, "Others", lv2_sorted_top_OTU_ID_Q2, "Others", lv2_sorted_top_OTU_ID_DADA2, "Others")
+lv3_sorted_OTUs <- c(lv3_sorted_top_OTU_ID_Q1, "Others", lv3_sorted_top_OTU_ID_Q2, "Others", lv3_sorted_top_OTU_ID_DADA2, "Others")
+lv4_sorted_OTUs <- c(lv4_sorted_top_OTU_ID_Q1, "Others", lv4_sorted_top_OTU_ID_Q2, "Others", lv4_sorted_top_OTU_ID_DADA2, "Others")
+lv5_sorted_OTUs <- c(lv5_sorted_top_OTU_ID_Q1, "Others", lv5_sorted_top_OTU_ID_Q2, "Others", lv5_sorted_top_OTU_ID_DADA2, "Others")
+lv6_sorted_OTUs <- c(lv6_sorted_top_OTU_ID_Q1, "Others", lv6_sorted_top_OTU_ID_Q2, "Others", lv6_sorted_top_OTU_ID_DADA2, "Others")
+lv7_sorted_OTUs <- c(lv7_sorted_top_OTU_ID_Q1, "Others", lv7_sorted_top_OTU_ID_Q2, "Others", lv7_sorted_top_OTU_ID_DADA2, "Others")
+
+
+
+
+lv3_sorted_OTUs
+
+method= c(rep("Q1",11), rep("Q2", 11), rep("DADA2", 11))
+
+level2_rel_top10 <- data.frame(lv2_sorted_OTUs, lv2_Rel_Freq, method)
+level3_rel_top10 <- data.frame(lv3_sorted_OTUs, lv3_Rel_Freq, method)
+level4_rel_top10 <- data.frame(lv4_sorted_OTUs, lv4_Rel_Freq, method)
+level5_rel_top10 <- data.frame(lv5_sorted_OTUs, lv5_Rel_Freq, method)
+level6_rel_top10 <- data.frame(lv6_sorted_OTUs, lv6_Rel_Freq, method)
+level7_rel_top10 <- data.frame(lv7_sorted_OTUs, lv7_Rel_Freq, method)
+
+
+level3_rel_top10
+
+level2_rel_top10$method <- as.factor(level2_rel_top10$method)
+level3_rel_top10$method <- as.factor(level3_rel_top10$method)
+level4_rel_top10$method <- as.factor(level4_rel_top10$method)
+level5_rel_top10$method <- as.factor(level5_rel_top10$method)
+level6_rel_top10$method <- as.factor(level6_rel_top10$method)
+level7_rel_top10$method <- as.factor(level7_rel_top10$method)
+
+level3_rel_top10$method
+
+
+colnames(level2_rel_top10) = c("OTU_ID","Rel Freq","Method")
+colnames(level3_rel_top10) = c("OTU_ID","Rel Freq","Method")
+colnames(level4_rel_top10) = c("OTU_ID","Rel Freq","Method")
+colnames(level5_rel_top10) = c("OTU_ID","Rel Freq","Method")
+colnames(level6_rel_top10) = c("OTU_ID","Rel Freq","Method")
+colnames(level7_rel_top10) = c("OTU_ID","Rel Freq","Method")
+
+# level3_rel_top10
+
+
+```
+
+
+```{r plot_rel_function, include=FALSE}
+
+
+#call the function while I set a variable for the plots product
+
+my_plot_rel_func <- function(my_df, title="") {
+  ggplot(my_df, aes(x=Method, y=`Rel Freq`, fill=OTU_ID)) +
+    geom_bar(stat='identity') +
+    #theme(legend.position = "none") +
+    theme(legend.key.size = unit(4, "mm"))+
+    ggtitle(title)
+}
+my_plot_rel_func_nolegend <- function(my_df, title="") {
+  ggplot(my_df, aes(x=Method, y=`Rel Freq`, fill=OTU_ID)) +
+    theme(legend.position="none") + theme(panel.background = NULL) +
+    geom_bar(stat='identity') +
+    ggtitle(title)
+}
+
+plot_lv2_rel <- my_plot_rel_func(level2_rel_top10, title="Level 2: Top 10 Phylum Relative Frequency")
+plot_lv3_rel <- my_plot_rel_func(level3_rel_top10, title="Level 3: Top 10 Class Relative Frequency")
+plot_lv4_rel <- my_plot_rel_func(level4_rel_top10, title="Level 4: Top 10 Order Relative Frequency")
+plot_lv5_rel <- my_plot_rel_func(level5_rel_top10, title="Level 5: Top 10 Family Relative Frequency")
+plot_lv6_rel <- my_plot_rel_func(level6_rel_top10, title="Level 6: Top 10 Genus Relative Frequency")
+plot_lv7_rel <- my_plot_rel_func(level7_rel_top10, title="Level 7: Top 10 Species Relative Frequency")
+
+plot_lv2_rel_nolegend <- my_plot_rel_func_nolegend(level2_rel_top10, title="Level 2: Top 10 Phylum Relative Frequency")
+plot_lv3_rel_nolegend <- my_plot_rel_func_nolegend(level3_rel_top10, title="Level 3: Top 10 Class Relative Frequency")
+plot_lv4_rel_nolegend <- my_plot_rel_func_nolegend(level4_rel_top10, title="Level 4: Top 10 Order Relative Frequency")
+plot_lv5_rel_nolegend <- my_plot_rel_func_nolegend(level5_rel_top10, title="Level 5: Top 10 Family Relative Frequency")
+plot_lv6_rel_nolegend <- my_plot_rel_func_nolegend(level6_rel_top10, title="Level 6: Top 10 Genus Relative Frequency")
+plot_lv7_rel_nolegend <- my_plot_rel_func_nolegend(level7_rel_top10, title="Level 7: Top 10 Species Relative Frequency")
+
+
+plot_lv2_rel
+plot_lv3_rel
+plot_lv4_rel
+plot_lv5_rel
+plot_lv6_rel
+plot_lv7_rel
+
+plot_lv2_rel_nolegend
+plot_lv3_rel_nolegend
+plot_lv4_rel_nolegend
+plot_lv5_rel_nolegend
+plot_lv6_rel_nolegend
+plot_lv7_rel_nolegend
+
+```
+
+```{r palettes, include=FALSE}
+#create customed palettes
+
+library(RColorBrewer)
+mycolors= c(brewer.pal(name="Accent", n= 8), brewer.pal("Paired", n=12))
+
+custom_final28 = c("#771155", "#AA4488", "#EA6CC0", "#CC99BB", "#114477", "#4477AA","#1E78D2", "#77AADD", "#117777", "#44AAAA", "#3FE4E4", "#77CCCC", "#117744","#44AA77", "#1ED278", "#88CCAA", "#771122", "#AA4455", "#D21E2C","#DD7788","#777711", "#AAAA44", "#D2D21E", "#DDDD77","#774411", "#AA7744", "#D2781E", "#DDAA77")   
+
+```
+
+```{r plot_rel_function_palette}
+
+                   
+
+#call the function while I set a variable for the plots product
+
+my_plot_rel_func_mycolors <- function(my_df, title="") {
+  ggplot(my_df, aes(x=Method, y=`Rel Freq`, fill=OTU_ID)) +
+    geom_bar(stat='identity') +
+    #theme(legend.position = "none") +
+    theme(legend.key.size = unit(4, "mm"))+
+    ggtitle(title)+ 
+    ggplot2::scale_fill_manual(values=rep(c(mycolors), times=100))   
+
+}
+
+my_plot_rel_func_nolegend_mycolors <- function(my_df, title="") {
+  ggplot(my_df, aes(x=Method, y=`Rel Freq`, fill=OTU_ID)) +
+    theme(legend.position="none") + theme(panel.background = NULL) +
+    geom_bar(stat='identity') +
+    ggtitle(title) + 
+    ggplot2::scale_fill_manual(values=rep(c(mycolors), times=100))   
+
+}
+  
+
+plot_lv6_rel_custom <- my_plot_rel_func_mycolors(level6_rel_top10, title="Level 6: Top 10 Genus Relative Frequency")
+plot_lv7_rel_custom <- my_plot_rel_func_mycolors(level7_rel_top10, title="Level 7: Top 10 Species Relative Frequency")
+plot_lv5_rel_custom <- my_plot_rel_func_mycolors(level5_rel_top10, title="Level 5: Top 10 Family Relative Frequency")
+
+
+plot_lv6_rel_nolegend_custom <- my_plot_rel_func_nolegend_mycolors (level6_rel_top10, title="Level 6: Top 10 Genus Relative Frequency")
+plot_lv7_rel_nolegend_custom <- my_plot_rel_func_nolegend_mycolors (level7_rel_top10, title="Level 7: Top 10 Species Relative Frequency")
+plot_lv5_rel_nolegend_custom <- my_plot_rel_func_nolegend_mycolors (level5_rel_top10, title="Level 5: Top 10 Family Relative Frequency")
+plot_lv6_rel_custom
+plot_lv7_rel_custom
+plot_lv5_rel_custom
+plot_lv6_rel_nolegend_custom
+plot_lv7_rel_nolegend_custom
+plot_lv5_rel_nolegend_custom
+```
+
+
+
+```{r abs_top10_picker, include=FALSE}
+
+level2_abs_top <- level2_abs
+level3_abs_top <- level3_abs_s
+level4_abs_top <- level4_abs_s
+level5_abs_top <- level5_abs_s
+level6_abs_top <- level6_abs_s
+level7_abs_top <- level7_abs_s
+
+# level3_abs_top
+level2_abs_top$OTU_ID <- as.character(level2_abs_top$OTU_ID)
+level3_abs_top$OTU_ID <- as.character(level3_abs_top$OTU_ID)
+level4_abs_top$OTU_ID <- as.character(level4_abs_top$OTU_ID)
+level5_abs_top$OTU_ID <- as.character(level5_abs_top$OTU_ID)
+level6_abs_top$OTU_ID <- as.character(level6_abs_top$OTU_ID)
+level7_abs_top$OTU_ID <- as.character(level7_abs_top$OTU_ID)
+
+level5_abs_top$OTU_ID
+
+# is.factor(level3_abs_top$OTU_ID)                                     
+
+level2_abs_top_Q1 <- level2_abs_top[order(level2_abs_top[,2],decreasing=TRUE),]
+level3_abs_top_Q1 <- level3_abs_top[order(level3_abs_top[,2],decreasing=TRUE),]
+level4_abs_top_Q1 <- level4_abs_top[order(level4_abs_top[,2],decreasing=TRUE),]
+level5_abs_top_Q1 <- level5_abs_top[order(level5_abs_top[,2],decreasing=TRUE),]
+level6_abs_top_Q1 <- level6_abs_top[order(level6_abs_top[,2],decreasing=TRUE),]
+
+level7_abs_top_Q1 <- level7_abs_top[order(level7_abs_top[,2],decreasing=TRUE),]
+
+# level3_abs_top_Q1
+
+level2_abs_top_Q2 <- level2_abs_top[order(level2_abs_top[,3],decreasing=TRUE),]
+level3_abs_top_Q2 <- level3_abs_top[order(level3_abs_top[,3],decreasing=TRUE),]
+level4_abs_top_Q2 <- level4_abs_top[order(level4_abs_top[,3],decreasing=TRUE),]
+level5_abs_top_Q2 <- level5_abs_top[order(level5_abs_top[,3],decreasing=TRUE),]
+level6_abs_top_Q2 <- level6_abs_top[order(level6_abs_top[,3],decreasing=TRUE),]
+
+level7_abs_top_Q2 <- level7_abs_top[order(level7_abs_top[,3],decreasing=TRUE),]
+
+
+# level3_abs_top_Q2
+
+level2_abs_top_DADA2 <- level2_abs_top[order(level2_abs_top[,4],decreasing=TRUE),]
+level3_abs_top_DADA2 <- level3_abs_top[order(level3_abs_top[,4],decreasing=TRUE),]
+level4_abs_top_DADA2 <- level4_abs_top[order(level4_abs_top[,4],decreasing=TRUE),]
+level5_abs_top_DADA2 <- level5_abs_top[order(level5_abs_top[,4],decreasing=TRUE),]
+level6_abs_top_DADA2 <- level6_abs_top[order(level6_abs_top[,4],decreasing=TRUE),]
+level7_abs_top_DADA2 <- level7_abs_top[order(level7_abs_top[,4],decreasing=TRUE),]
+
+#level3_abs_top_DADA2
+
+#sum the worst XD
+rest_lv2_Q1 <- sum(level2_abs_top_Q1$Q1[-(1:10)])
+rest_lv3_Q1 <- sum(level3_abs_top_Q1$Q1[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_Q1 <- sum(level4_abs_top_Q1$Q1[-(1:10)])
+rest_lv5_Q1 <- sum(level5_abs_top_Q1$Q1[-(1:10)])
+rest_lv6_Q1 <- sum(level6_abs_top_Q1$Q1[-(1:10)])
+rest_lv7_Q1 <- sum(level7_abs_top_Q1$Q1[-(1:10)])
+
+rest_lv3_Q1
+
+rest_lv2_Q2 <- sum(level2_abs_top_Q2$Q2[-(1:10)])
+rest_lv3_Q2 <- sum(level3_abs_top_Q2$Q2[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_Q2 <- sum(level4_abs_top_Q2$Q2[-(1:10)])
+rest_lv5_Q2 <- sum(level5_abs_top_Q2$Q2[-(1:10)])
+rest_lv6_Q2 <- sum(level6_abs_top_Q2$Q2[-(1:10)])
+rest_lv7_Q2 <- sum(level7_abs_top_Q2$Q2[-(1:10)])
+
+
+rest_lv4_Q2
+
+rest_lv2_DADA2 <- sum(level2_abs_top_DADA2$DADA2[-(1:10)])
+rest_lv3_DADA2 <- sum(level3_abs_top_DADA2$DADA2[-(1:10)]) #sum all the values of the column sorted_B1 that are not the first ten
+rest_lv4_DADA2 <- sum(level4_abs_top_DADA2$DADA2[-(1:10)])
+rest_lv5_DADA2 <- sum(level5_abs_top_DADA2$DADA2[-(1:10)])
+rest_lv6_DADA2 <- sum(level6_abs_top_DADA2$DADA2[-(1:10)])
+rest_lv7_DADA2 <- sum(level7_abs_top_DADA2$DADA2[-(1:10)])
+
+
+
+rest_lv4_DADA2
+
+
+lv2_abs_Count= c(level2_abs_top_Q1$Q1[(1:10)], rest_lv2_Q1, level2_abs_top_Q2$Q2[(1:10)], rest_lv2_Q2, level2_abs_top_DADA2$DADA2[(1:10)], rest_lv2_DADA2)
+lv3_abs_Count= c(level3_abs_top_Q1$Q1[(1:10)], rest_lv3_Q1, level3_abs_top_Q2$Q2[(1:10)], rest_lv3_Q2, level3_abs_top_DADA2$DADA2[(1:10)], rest_lv3_DADA2)
+lv4_abs_Count= c(level4_abs_top_Q1$Q1[(1:10)], rest_lv4_Q1, level4_abs_top_Q2$Q2[(1:10)], rest_lv4_Q2, level4_abs_top_DADA2$DADA2[(1:10)], rest_lv4_DADA2)
+lv5_abs_Count= c(level5_abs_top_Q1$Q1[(1:10)], rest_lv5_Q1, level5_abs_top_Q2$Q2[(1:10)], rest_lv5_Q2, level5_abs_top_DADA2$DADA2[(1:10)], rest_lv5_DADA2)
+lv6_abs_Count= c(level6_abs_top_Q1$Q1[(1:10)], rest_lv6_Q1, level6_abs_top_Q2$Q2[(1:10)], rest_lv6_Q2, level6_abs_top_DADA2$DADA2[(1:10)], rest_lv6_DADA2)
+lv7_abs_Count= c(level7_abs_top_Q1$Q1[(1:10)], rest_lv7_Q1, level7_abs_top_Q2$Q2[(1:10)], rest_lv7_Q2, level7_abs_top_DADA2$DADA2[(1:10)], rest_lv7_DADA2)
+
+
+lv3_abs_Count
+
+lv2_sorted_top_OTU_ID_Q1 <- level2_abs_top_Q1$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_Q1 <- level3_abs_top_Q1$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_Q1 <- level4_abs_top_Q1$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_Q1 <- level5_abs_top_Q1$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_Q1 <- level6_abs_top_Q1$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_Q1 <- level7_abs_top_Q1$OTU_ID[(1:10)]
+
+
+lv2_sorted_top_OTU_ID_Q2 <- level2_abs_top_Q2$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_Q2 <- level3_abs_top_Q2$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_Q2 <- level4_abs_top_Q2$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_Q2 <- level5_abs_top_Q2$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_Q2 <- level6_abs_top_Q2$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_Q2 <- level7_abs_top_Q2$OTU_ID[(1:10)]
+
+
+lv2_sorted_top_OTU_ID_DADA2 <- level2_abs_top_DADA2$OTU_ID[(1:10)]
+lv3_sorted_top_OTU_ID_DADA2 <- level3_abs_top_DADA2$OTU_ID[(1:10)]
+lv4_sorted_top_OTU_ID_DADA2 <- level4_abs_top_DADA2$OTU_ID[(1:10)]
+lv5_sorted_top_OTU_ID_DADA2 <- level5_abs_top_DADA2$OTU_ID[(1:10)]
+lv6_sorted_top_OTU_ID_DADA2 <- level6_abs_top_DADA2$OTU_ID[(1:10)]
+lv7_sorted_top_OTU_ID_DADA2 <- level7_abs_top_DADA2$OTU_ID[(1:10)]
+
+is.factor(lv3_sorted_top_OTU_ID_Q2)
+
+lv2_sorted_OTUs <- c(lv2_sorted_top_OTU_ID_Q1, "Others", lv2_sorted_top_OTU_ID_Q2, "Others", lv2_sorted_top_OTU_ID_DADA2, "Others")
+lv3_sorted_OTUs <- c(lv3_sorted_top_OTU_ID_Q1, "Others", lv3_sorted_top_OTU_ID_Q2, "Others", lv3_sorted_top_OTU_ID_DADA2, "Others")
+lv4_sorted_OTUs <- c(lv4_sorted_top_OTU_ID_Q1, "Others", lv4_sorted_top_OTU_ID_Q2, "Others", lv4_sorted_top_OTU_ID_DADA2, "Others")
+lv5_sorted_OTUs <- c(lv5_sorted_top_OTU_ID_Q1, "Others", lv5_sorted_top_OTU_ID_Q2, "Others", lv5_sorted_top_OTU_ID_DADA2, "Others")
+lv6_sorted_OTUs <- c(lv6_sorted_top_OTU_ID_Q1, "Others", lv6_sorted_top_OTU_ID_Q2, "Others", lv6_sorted_top_OTU_ID_DADA2, "Others")
+lv7_sorted_OTUs <- c(lv7_sorted_top_OTU_ID_Q1, "Others", lv7_sorted_top_OTU_ID_Q2, "Others", lv7_sorted_top_OTU_ID_DADA2, "Others")
+
+lv3_sorted_OTUs
+
+method= c(rep("Q1",11), rep("Q2", 11), rep("DADA2", 11))
+
+level2_abs_top10 <- data.frame(lv2_sorted_OTUs, lv2_abs_Count, method)
+level3_abs_top10 <- data.frame(lv3_sorted_OTUs, lv3_abs_Count, method)
+level4_abs_top10 <- data.frame(lv4_sorted_OTUs, lv4_abs_Count, method)
+level5_abs_top10 <- data.frame(lv5_sorted_OTUs, lv5_abs_Count, method)
+level6_abs_top10 <- data.frame(lv6_sorted_OTUs, lv6_abs_Count, method)
+level7_abs_top10 <- data.frame(lv7_sorted_OTUs, lv7_abs_Count, method)
+
+
+
+level3_abs_top10
+
+level2_abs_top10$method <- as.factor(level2_abs_top10$method)
+level3_abs_top10$method <- as.factor(level3_abs_top10$method)
+level4_abs_top10$method <- as.factor(level4_abs_top10$method)
+level5_abs_top10$method <- as.factor(level5_abs_top10$method)
+level6_abs_top10$method <- as.factor(level6_abs_top10$method)
+level7_abs_top10$method <- as.factor(level7_abs_top10$method)
+
+level3_abs_top10$method
+
+
+colnames(level2_abs_top10) = c("OTU_ID","abs_Count","Method")
+colnames(level3_abs_top10) = c("OTU_ID","abs_Count","Method")
+colnames(level4_abs_top10) = c("OTU_ID","abs_Count","Method")
+colnames(level5_abs_top10) = c("OTU_ID","abs_Count","Method")
+colnames(level6_abs_top10) = c("OTU_ID","abs_Count","Method")
+colnames(level7_abs_top10) = c("OTU_ID","abs_Count","Method")
+
+# level3_abs_top10
+
+
+```
+- Absolute Count for top10 taxa of each method:
+
+```{r plot_abs_count_top10}
+
+my_plot_abs_func <- function(my_df, title="") {
+  ggplot(my_df, aes(x=my_df$OTU_ID, y=my_df$abs_Count)) + 
+    scale_y_log10()+
+    geom_bar(aes(fill = my_df$Method), 
+             width = 0.4, position = position_dodge(width=0.5), stat="identity") +
+    ggtitle(title)+
+    theme(legend.position="top", legend.title = element_blank(),
+          axis.title.x=element_blank(), 
+          axis.title.y=element_blank(),
+          axis.text.x=element_text(size=10,angle=90, hjust = 1),
+          panel.background = NULL
+    ) 
+}
+
+my_plot_abs_func_nolog <- function(my_df, title="") {
+  ggplot(my_df, aes(x=my_df$OTU_ID, y=my_df$abs_Count)) + 
+    #scale_y_log10()+
+    geom_bar(aes(fill = my_df$Method), 
+             width = 0.4, position = position_dodge(width=0.5), stat="identity") +
+    ggtitle(title)+
+    theme(legend.position="top", legend.title = element_blank(),
+          axis.title.x=element_blank(), 
+          axis.title.y=element_blank(),
+          axis.text.x=element_text(size=10,angle=90, hjust = 1),
+          panel.background = NULL
+    ) 
+}
+
+
+#call the function while I set a variable for the plots product
+plot_lv2_abs_top10 <- my_plot_abs_func(level2_abs_top10, title="Level 2: Phylum Absolute Count top10")
+plot_lv3_abs_top10 <- my_plot_abs_func(level3_abs_top10, title="Level 3: Class Absolute Count top10")
+plot_lv4_abs_top10 <- my_plot_abs_func(level4_abs_top10, title="Level 4: Order Absolute Count top10")
+plot_lv5_abs_top10 <- my_plot_abs_func(level5_abs_top10, title="Level 5: Family Absolute Count top10")
+plot_lv6_abs_top10 <- my_plot_abs_func(level6_abs_top10, title="Level 6: Genus Absolute Count top10")
+plot_lv7_abs_top10 <- my_plot_abs_func(level7_abs_top10, title="Level 7: Species Absolute Count top10")
+
+#nolog
+plot_lv6_abs_top10_nolog <- my_plot_abs_func_nolog(level6_abs_top10, title="Level 6: Genus Absolute Count top10")
+plot_lv7_abs_top10_nolog <- my_plot_abs_func_nolog(level7_abs_top10, title="Level 7: Species Absolute Count top10")
+
+
+
+plot_lv2_abs_top10
+plot_lv3_abs_top10
+plot_lv4_abs_top10
+plot_lv5_abs_top10
+plot_lv6_abs_top10
+plot_lv7_abs_top10
+
+
+plot_lv6_abs_top10_nolog
+plot_lv7_abs_top10_nolog
+
+#log10(0) = - infinite thats why the scale is not adjusted in Unassigned values.
+
+
+```
+
+
+- plotting Unifrac DM PCoA 
+
+
+```{r pcoA_Unifrac, include=FALSE}
+
+#importing objects 
+
+mapping_file <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/16SDATA/metadata.tab", row.names = 1)
+
+OTU_table_qiime2 <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/QIIME2/rarefied_frombiom.txt", row.names=1, sep="\t", skip=1, dec=".", comment.char="")
+
+unw_unifrac_dm_qiime2 <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/COMPARING_DM/q2_Md_Unifrac_dm.tsv", row.names=1, sep="\t", dec=".")
+
+OTU_table_qiime1 <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/QIIMEI/tablefrom_table_even7786.txt", row.names=1, sep="\t", skip=1, dec=".", comment.char="")
+
+unw_unifrac_dm_qiime1 <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/COMPARING_DM/q1_Md_Unifrac_dm.txt", row.names=1, sep="\t", dec=".")
+
+OTU_table_DADA2 <- read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/DADA2/Otu_raref_silva_fromDada2.txt", row.names=1, sep="\t", skip=1, dec=".", comment.char="")
+
+colnames(OTU_table_DADA2) <- c("WT.day3.11", "WT.day3.13", "WT.day3.14", "WT.day3.15", "WT.day3.9", "WT.unt.1", "WT.unt.2", "WT.unt.3", "WT.unt.4", "WT.unt.7" )
+
+bray_q1 <- bray_q1_sorted 
+bray_q2 <- bray_q2_sorted
+bray_dada2 <- bray_dada2_sorted
+
+bray_q1_b <-read.delim2("~/Dropbox/MASTER_PROJECT_UBI/Cirework/BIOINFORMATICS_MASTER/PROYECTO/RMarkdown/QIIMEI/beta_diversity_raref/bray_curtis_table_even7786.txt", row.names = 1, sep = "\t", dec = ".")
+
+
+
+#we already had the Unifrac dada2_Unifrac_Q2 and dada2_Unifrac_ape
+
+unw_unifrac_dm_dada2 <- dada2_Unifrac_ape
+
+```
+
+```{r pcoA_Q2_function, include=FALSE}
+
+PCOA_plot_qiime2 <- function(mapping_file, OTU_table, matrix, title) {
+  OTU_table<-t(OTU_table)
+  OTU_table<-as.data.frame(OTU_table)
+  OTU_table<-OTU_table[match(rownames(mapping_file), rownames(OTU_table)),]
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix<-t(matrix)
+  matrix<-as.data.frame(matrix)
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix_dist<-as.dist(matrix)
+  matrix_dist_pcoa<-cmdscale(matrix_dist,k=nrow(OTU_table)-1,eig=T,add=F)
+  matrix_dist_pcoa_2<-add.spec.scores(matrix_dist_pcoa, OTU_table, method="pcoa.scores",Rscale=T, scaling=1,multi=1)
+    color_palete<-c( "indianred1", "cyan2")
+  groups<-levels(mapping_file$AntibioticUsage)
+  plot_matrix_dist_pcoa<-ordiplot(matrix_dist_pcoa_2,type="points", display="sites",ann=FALSE, ylim =c(-0.4, 0.4), xlim =c(-0.2, 0.2))
+  mapply(function(group,color){
+    points(plot_matrix_dist_pcoa,"sites",cex = 1, pch=21, col="black", bg=color, select=rownames(mapping_file[mapping_file$AntibioticUsage==group,]))
+  }, groups, color_palete)
+  #legend(x="bottomleft",legend=groups, fill= color_palete, title="Antibiotic Usage", cex= 1)
+  ordiellipse(matrix_dist_pcoa_2, mapping_file$AntibioticUsage, draw = c("lines"), kind= c("sd"), conf=0.95, lty = 2)
+  XLAB<-paste(c("CP1: ", format(matrix_dist_pcoa_2$eig.percen[1],digits = 4, format= "f"), "%"), collapse = "")
+  XLAB<-noquote(XLAB)
+  YLAB<-paste(c("CP2: ", format(matrix_dist_pcoa_2$eig.percen[2],digits = 3, format= "f"), "%"), collapse = "")
+  YLAB<-noquote(YLAB)
+  title(xlab=XLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(ylab=YLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(main=title, cex= 5)
+}
+
+
+```
+
+```{r call_fx_plots}
+
+PCOA_plot_qiime2(mapping_file, OTU_table_qiime2, unw_unifrac_dm_qiime2, "Unweighted Unifrac PCoA QIIME2")
+PCOA_plot_qiime2(mapping_file, OTU_table_qiime1, unw_unifrac_dm_qiime1, "Unweighted Unifrac PCoA QIIMEI")
+PCOA_plot_qiime2(mapping_file, OTU_table_DADA2,  unw_unifrac_dm_dada2, "Unweighted Unifrac PCoA DADA2")
+PCOA_plot_qiime2(mapping_file, OTU_table_DADA2,  dada2_Unifrac_ape, "Unweighted Unifrac PCoA DADA2 (ape tree)")
+
+```
+
+
+
+```{r bray_pcoA_Q2_function, include=FALSE}
+
+PCOA_plot_qiime2_bray <- function(mapping_file, OTU_table, matrix, title) {
+  OTU_table<-t(OTU_table)
+  OTU_table<-as.data.frame(OTU_table)
+  OTU_table<-OTU_table[match(rownames(mapping_file), rownames(OTU_table)),]
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix<-t(matrix)
+  matrix<-as.data.frame(matrix)
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix_dist<-as.dist(matrix)
+  matrix_dist_pcoa<-cmdscale(matrix_dist,k=nrow(OTU_table)-1,eig=T,add=F)
+  matrix_dist_pcoa_2<-add.spec.scores(matrix_dist_pcoa, OTU_table, method="pcoa.scores",Rscale=T, scaling=1,multi=1)
+    color_palete<-c( "indianred1", "cyan2")
+  groups<-levels(mapping_file$AntibioticUsage)
+  plot_matrix_dist_pcoa<-ordiplot(matrix_dist_pcoa_2,type="points", display="sites",ann=FALSE)
+  mapply(function(group,color){
+    points(plot_matrix_dist_pcoa,"sites",cex = 1, pch=21, col="black", bg=color, select=rownames(mapping_file[mapping_file$AntibioticUsage==group,]))
+  }, groups, color_palete)
+  #legend(x="bottomleft",legend=groups, fill= color_palete, title="Antibiotic Usage", cex= 1)
+  ordiellipse(matrix_dist_pcoa_2, mapping_file$AntibioticUsage, draw = c("lines"), kind= c("sd"), conf=0.95, lty = 2)
+  XLAB<-paste(c("CP1: ", format(matrix_dist_pcoa_2$eig.percen[1],digits = 4, format= "f"), "%"), collapse = "")
+  XLAB<-noquote(XLAB)
+  YLAB<-paste(c("CP2: ", format(matrix_dist_pcoa_2$eig.percen[2],digits = 3, format= "f"), "%"), collapse = "")
+  YLAB<-noquote(YLAB)
+  title(xlab=XLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(ylab=YLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(main=title, cex= 5)
+}
+
+
+```
+
+
+```{r call_fx_plots_Bray}
+
+PCOA_plot_qiime2_bray(mapping_file, OTU_table_qiime2, bray_q2, "Bray-Curtis PCoA QIIME2")
+PCOA_plot_qiime2_bray(mapping_file, OTU_table_qiime1, bray_q1, "Bray-Curtis PCoA QIIMEI")
+PCOA_plot_qiime2_bray(mapping_file, OTU_table_DADA2,  bray_dada2, "Bray-Curtis PCoA DADA2")
+
+
+```
+```{r legend_PCOA, include=FALSE}
+
+PCOA_plot_legend <- function(mapping_file, OTU_table, matrix, title) {
+  OTU_table<-t(OTU_table)
+  OTU_table<-as.data.frame(OTU_table)
+  OTU_table<-OTU_table[match(rownames(mapping_file), rownames(OTU_table)),]
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix<-t(matrix)
+  matrix<-as.data.frame(matrix)
+  matrix<-matrix[match(rownames(mapping_file), rownames(matrix)),]
+  matrix_dist<-as.dist(matrix)
+  matrix_dist_pcoa<-cmdscale(matrix_dist,k=nrow(OTU_table)-1,eig=T,add=F)
+  matrix_dist_pcoa_2<-add.spec.scores(matrix_dist_pcoa, OTU_table, method="pcoa.scores",Rscale=T, scaling=1,multi=1)
+    color_palete<-c( "indianred1", "cyan2")
+  groups<-levels(mapping_file$AntibioticUsage)
+  plot_matrix_dist_pcoa<-ordiplot(matrix_dist_pcoa_2,type="points", display="sites",ann=FALSE)
+  mapply(function(group,color){
+    points(plot_matrix_dist_pcoa,"sites",cex = 1, pch=21, col="black", bg=color, select=rownames(mapping_file[mapping_file$AntibioticUsage==group,]))
+  }, groups, color_palete)
+  legend(x="bottomleft",legend=groups, fill= color_palete, title="Antibiotic Usage", cex= 1)
+  ordiellipse(matrix_dist_pcoa_2, mapping_file$AntibioticUsage, draw = c("lines"), kind= c("sd"), conf=0.95, lty = 2)
+  XLAB<-paste(c("CP1: ", format(matrix_dist_pcoa_2$eig.percen[1],digits = 4, format= "f"), "%"), collapse = "")
+  XLAB<-noquote(XLAB)
+  YLAB<-paste(c("CP2: ", format(matrix_dist_pcoa_2$eig.percen[2],digits = 3, format= "f"), "%"), collapse = "")
+  YLAB<-noquote(YLAB)
+  title(xlab=XLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(ylab=YLAB, col.lab="black", cex.lab= 1.2, line=3)
+  title(main=title, cex= 5)
+}
+```
+
+```{r bray_legends}
+PCOA_plot_legend(mapping_file, OTU_table_qiime2, bray_q2, "Bray-Curtis PCoA QIIME2")
+PCOA_plot_legend(mapping_file, OTU_table_qiime1, bray_q1, "Bray-Curtis PCoA QIIMEI")
+PCOA_plot_legend(mapping_file, OTU_table_DADA2,  bray_dada2, "Bray-Curtis PCoA DADA2")
+```
+
+
+# Session_Info
+
+```{r sessionInfo}
+sessionInfo()
+```
+
+

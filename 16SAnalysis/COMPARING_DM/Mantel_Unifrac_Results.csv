@@ -1,0 +1,11 @@
+Pearson,Method,Q1,Q2,DADA2
+r,Q1,,0.776836,0.803325
+significance,,,0.004,0.007
+r,Q2,,,0.8057842
+significance,,,,0.008
+,,,,
+Spearman,,Q1,Q2,DADA2
+r,Q1,,0.6794466,0.7566535
+significance,,,0.008,0.001
+r,Q2,,,0.6915679
+significance,,,,0.006

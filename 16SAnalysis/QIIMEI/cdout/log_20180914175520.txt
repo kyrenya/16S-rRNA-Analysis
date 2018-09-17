@@ -1,0 +1,264 @@
+Logging started at 17:55:20 on 14 Sep 2018
+QIIME version: 1.9.1
+
+qiime_config values:
+pick_otus_reference_seqs_fp	/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/qiime_default_reference/gg_13_8_otus/rep_set/97_otus.fasta
+sc_queue	all.q
+pynast_template_alignment_fp	/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/qiime_default_reference/gg_13_8_otus/rep_set_aligned/85_otus.pynast.fasta
+cluster_jobs_fp	start_parallel_jobs.py
+assign_taxonomy_reference_seqs_fp	/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/qiime_default_reference/gg_13_8_otus/rep_set/97_otus.fasta
+torque_queue	friendlyq
+jobs_to_start	1
+denoiser_min_per_core	50
+assign_taxonomy_id_to_taxonomy_fp	/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/qiime_default_reference/gg_13_8_otus/taxonomy/97_otu_taxonomy.txt
+temp_dir	/tmp/
+blastall_fp	blastall
+seconds_to_sleep	1
+
+parameter file values:
+parallel:jobs_to_start	1
+
+Input file md5 sums:
+./QIIMEI/otus/otu_table_mc2_w_tax_no_pynast_failures.biom: a003e78e8565064b31fd537bc42ca949
+./16SDATA/metadata.tab: 2a9e404338da980b0258544e2d3e17b6
+./QIIMEI/otus/rep_set.tre: 6e4a336dbd00d6ac02ffea0a530c9af2
+
+Executing commands.
+
+# Generate BIOM table summary command 
+biom summarize-table -i ./QIIMEI/otus/otu_table_mc2_w_tax_no_pynast_failures.biom -o ./QIIMEI/cdout//biom_table_summary.txt 
+
+Stdout:
+
+Stderr:
+
+# Filter low sequence count samples from table (minimum sequence count: 7786) command 
+filter_samples_from_otu_table.py -i ./QIIMEI/otus/otu_table_mc2_w_tax_no_pynast_failures.biom -o ./QIIMEI/cdout//table_mc7786.biom -n 7786
+
+Stdout:
+
+Stderr:
+
+# Rarify the OTU table to 7786 sequences/sample command 
+single_rarefaction.py -i ./QIIMEI/cdout//table_mc7786.biom -o ./QIIMEI/cdout//table_even7786.biom -d 7786
+
+Stdout:
+
+Stderr:
+
+Executing commands.
+
+# Beta Diversity (weighted_unifrac) command 
+beta_diversity.py -i ./QIIMEI/cdout//table_even7786.biom -o ./QIIMEI/cdout//bdiv_even7786/ --metrics weighted_unifrac  -t ./QIIMEI/otus/rep_set.tre 
+
+Stdout:
+
+Stderr:
+
+# Rename distance matrix (weighted_unifrac) command 
+mv ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_table_even7786.txt ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_dm.txt
+
+Stdout:
+
+Stderr:
+
+# Principal coordinates (weighted_unifrac) command 
+principal_coordinates.py -i ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_dm.txt -o ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_pc.txt 
+
+Stdout:
+
+Stderr:
+/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/skbio/stats/ordination/_principal_coordinate_analysis.py:107: RuntimeWarning: The result contains negative eigenvalues. Please compare their magnitude with the magnitude of some of the largest positive eigenvalues. If the negative ones are smaller, it's probably safe to ignore them, but if they are large in magnitude, the results won't be useful. See the Notes section for more details. The smallest eigenvalue is -0.00560476611281 and the largest is 0.381660873955.
+  RuntimeWarning
+
+# Make emperor plots, weighted_unifrac) command 
+make_emperor.py -i ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_pc.txt -o ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_emperor_pcoa_plot/ -m ./16SDATA/metadata.tab 
+
+Stdout:
+
+Stderr:
+
+# Beta Diversity (unweighted_unifrac) command 
+beta_diversity.py -i ./QIIMEI/cdout//table_even7786.biom -o ./QIIMEI/cdout//bdiv_even7786/ --metrics unweighted_unifrac  -t ./QIIMEI/otus/rep_set.tre 
+
+Stdout:
+
+Stderr:
+
+# Rename distance matrix (unweighted_unifrac) command 
+mv ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_table_even7786.txt ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_dm.txt
+
+Stdout:
+
+Stderr:
+
+# Principal coordinates (unweighted_unifrac) command 
+principal_coordinates.py -i ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_dm.txt -o ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_pc.txt 
+
+Stdout:
+
+Stderr:
+
+# Make emperor plots, unweighted_unifrac) command 
+make_emperor.py -i ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_pc.txt -o ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_emperor_pcoa_plot/ -m ./16SDATA/metadata.tab 
+
+Stdout:
+
+Stderr:
+
+Executing commands.
+
+# Alpha rarefaction command 
+multiple_rarefactions.py -i ./QIIMEI/cdout//table_mc7786.biom -m 10 -x 7786 -s 777 -o ./QIIMEI/cdout//arare_max7786//rarefaction/ 
+
+Stdout:
+
+Stderr:
+
+# Alpha diversity on rarefied OTU tables command 
+alpha_diversity.py -i ./QIIMEI/cdout//arare_max7786//rarefaction/ -o ./QIIMEI/cdout//arare_max7786//alpha_div/  -t ./QIIMEI/otus/rep_set.tre
+
+Stdout:
+
+Stderr:
+
+# Collate alpha command 
+collate_alpha.py -i ./QIIMEI/cdout//arare_max7786//alpha_div/ -o ./QIIMEI/cdout//arare_max7786//alpha_div_collated/ 
+
+Stdout:
+
+Stderr:
+
+# Removing intermediate files command 
+rm -r ./QIIMEI/cdout//arare_max7786//rarefaction/ ./QIIMEI/cdout//arare_max7786//alpha_div/
+
+Stdout:
+
+Stderr:
+
+# Rarefaction plot: All metrics command 
+make_rarefaction_plots.py -i ./QIIMEI/cdout//arare_max7786//alpha_div_collated/ -m ./16SDATA/metadata.tab -o ./QIIMEI/cdout//arare_max7786//alpha_rarefaction_plots/ 
+
+Stdout:
+
+Stderr:
+/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/matplotlib/collections.py:590: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if self._edgecolors == str('face'):
+
+Executing commands.
+
+# Sort OTU Table command 
+sort_otu_table.py -i ./QIIMEI/cdout//table_mc7786.biom -o ./QIIMEI/cdout//taxa_plots/table_mc7786_sorted.biom
+
+Stdout:
+
+Stderr:
+
+# Summarize Taxonomy command 
+summarize_taxa.py -i ./QIIMEI/cdout//taxa_plots/table_mc7786_sorted.biom -o ./QIIMEI/cdout//taxa_plots/ 
+
+Stdout:
+
+Stderr:
+
+# Plot Taxonomy Summary command 
+plot_taxa_summary.py -i ./QIIMEI/cdout//taxa_plots/table_mc7786_sorted_L2.txt,./QIIMEI/cdout//taxa_plots/table_mc7786_sorted_L3.txt,./QIIMEI/cdout//taxa_plots/table_mc7786_sorted_L4.txt,./QIIMEI/cdout//taxa_plots/table_mc7786_sorted_L5.txt,./QIIMEI/cdout//taxa_plots/table_mc7786_sorted_L6.txt -o ./QIIMEI/cdout//taxa_plots//taxa_summary_plots/ 
+
+Stdout:
+
+Stderr:
+/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/matplotlib/collections.py:590: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if self._edgecolors == str('face'):
+
+Executing commands.
+
+# Collapse samples in OTU table by categories command 
+collapse_samples.py -m ./16SDATA/metadata.tab -b ./QIIMEI/cdout//table_mc7786.biom --output_biom_fp ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table.biom --output_mapping_fp ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_map.txt --collapse_fields 'AntibioticUsage' 
+
+Stdout:
+
+Stderr:
+
+# Sort OTU Table command 
+sort_otu_table.py -i ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table.biom -o ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted.biom
+
+Stdout:
+
+Stderr:
+
+# Summarize Taxonomy command 
+summarize_taxa.py -i ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted.biom -o ./QIIMEI/cdout//taxa_plots_AntibioticUsage/ 
+
+Stdout:
+
+Stderr:
+
+# Plot Taxonomy Summary command 
+plot_taxa_summary.py -i ./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted_L2.txt,./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted_L3.txt,./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted_L4.txt,./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted_L5.txt,./QIIMEI/cdout//taxa_plots_AntibioticUsage/AntibioticUsage_otu_table_sorted_L6.txt -o ./QIIMEI/cdout//taxa_plots_AntibioticUsage//taxa_summary_plots/ 
+
+Stdout:
+
+Stderr:
+/home/cire/miniconda3/envs/qiime1/lib/python2.7/site-packages/matplotlib/collections.py:590: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if self._edgecolors == str('face'):
+
+Executing commands.
+
+# Boxplots (AntibioticUsage) command 
+make_distance_boxplots.py -d ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_dm.txt -f AntibioticUsage -o ./QIIMEI/cdout//bdiv_even7786//weighted_unifrac_boxplots/ -m ./16SDATA/metadata.tab -n 999 
+
+Stdout:
+
+Stderr:
+
+# Boxplots (AntibioticUsage) command 
+make_distance_boxplots.py -d ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_dm.txt -f AntibioticUsage -o ./QIIMEI/cdout//bdiv_even7786//unweighted_unifrac_boxplots/ -m ./16SDATA/metadata.tab -n 999 
+
+Stdout:
+
+Stderr:
+
+# Compare alpha diversity (PD_whole_tree) command 
+compare_alpha_diversity.py -i ./QIIMEI/cdout//arare_max7786//alpha_div_collated/PD_whole_tree.txt -m ./16SDATA/metadata.tab -c AntibioticUsage -o ./QIIMEI/cdout//arare_max7786//compare_PD_whole_tree -n 999 
+
+Stdout:
+
+Stderr:
+
+# Compare alpha diversity (observed_otus) command 
+compare_alpha_diversity.py -i ./QIIMEI/cdout//arare_max7786//alpha_div_collated/observed_otus.txt -m ./16SDATA/metadata.tab -c AntibioticUsage -o ./QIIMEI/cdout//arare_max7786//compare_observed_otus -n 999 
+
+Stdout:
+
+Stderr:
+
+# Compare alpha diversity (chao1) command 
+compare_alpha_diversity.py -i ./QIIMEI/cdout//arare_max7786//alpha_div_collated/chao1.txt -m ./16SDATA/metadata.tab -c AntibioticUsage -o ./QIIMEI/cdout//arare_max7786//compare_chao1 -n 999 
+
+Stdout:
+
+Stderr:
+
+# Group significance (AntibioticUsage) command 
+group_significance.py -i ./QIIMEI/cdout//table_even7786.biom -m ./16SDATA/metadata.tab -c AntibioticUsage -o ./QIIMEI/cdout//group_significance_AntibioticUsage.txt 
+
+Stdout:
+
+Stderr:
+
+# Compress the filtered BIOM table command 
+gzip ./QIIMEI/cdout//table_mc7786.biom
+
+Stdout:
+
+Stderr:
+
+# Compress the rarefied BIOM table command 
+gzip ./QIIMEI/cdout//table_even7786.biom
+
+Stdout:
+
+Stderr:
+
+
+Logging stopped at 18:02:11 on 14 Sep 2018

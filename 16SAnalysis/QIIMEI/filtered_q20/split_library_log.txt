@@ -1,0 +1,170 @@
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_day3_11_SRR2628505_1.fastq.gz (md5: 45a2e5aa11cd9c55bd85ac8b2e52c6d1)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 614
+Count of N characters exceeds limit: 2
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 244.00
+WT.day3.11	9384
+
+Total number seqs written	9384
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_day3_13_SRR2628506_1.fastq.gz (md5: 25048880f042176cdb8dead7afaeea21)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 556
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 244.00
+WT.day3.13	9444
+
+Total number seqs written	9444
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_day3_14_SRR2627471_1.fastq.gz (md5: 3dc2a6f8eab7c0fe3893516f7db859c5)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 1882
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 293.00
+WT.day3.14	8118
+
+Total number seqs written	8118
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_day3_15_SRR2628507_1.fastq.gz (md5: ef7a37b938ac5eb23eddb1e15f6648ee)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 718
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 244.00
+WT.day3.15	9282
+
+Total number seqs written	9282
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_day3_9_SRR2628504_1.fastq.gz (md5: 05f7855ca6a375f094617cee30769c60)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 642
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 244.00
+WT.day3.9	9358
+
+Total number seqs written	9358
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_unt_1_SRR2627457_1.fastq.gz (md5: cd21a81c3facc0d31e4c75b778c90b6b)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 924
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 294.00
+WT.unt.1	9076
+
+Total number seqs written	9076
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_unt_2_SRR2627461_1.fastq.gz (md5: 489e9320aaf2601345ba54e0d7af5c89)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 1022
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 294.00
+WT.unt.2	8978
+
+Total number seqs written	8978
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_unt_3_SRR2627463_1.fastq.gz (md5: 031327c04caaac59169aa8007e1e38fc)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 937
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 294.00
+WT.unt.3	9063
+
+Total number seqs written	9063
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_unt_4_SRR2627464_1.fastq.gz (md5: 4b74bdcb7e5c377fdfb0563ef55ea345)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 902
+Count of N characters exceeds limit: 1
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 294.00
+WT.unt.4	9097
+
+Total number seqs written	9097
+---
+
+Input file paths
+Sequence read filepath: ./16SDATA/16S_WT_unt_7_SRR2627465_1.fastq.gz (md5: 3d7f1a63bb01628158f0748b41153d4a)
+Quality filter results
+Total number of input sequences: 10000
+Barcode not in mapping file: 0
+Read too short after quality truncation: 951
+Count of N characters exceeds limit: 0
+Illumina quality digit = 0: 0
+Barcode errors exceed max: 0
+
+Result summary (after quality filtering)
+Median sequence length: 294.00
+WT.unt.7	9049
+
+Total number seqs written	9049
+---
+

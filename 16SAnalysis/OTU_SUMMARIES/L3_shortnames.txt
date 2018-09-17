@@ -1,0 +1,24 @@
+"Unassigned;Other;Other"
+"k__Bacteria;Other;Other "
+"p__Bacteroidetes;__"
+c__Actinobacteria
+c__Coriobacteriia
+c__Bacteroidia
+c__Flavobacteriia
+c__Sphingobacteriia
+c__4C0d-2
+c__Melaibacteria
+c__Deferribacteres
+c__Bacilli
+c__Clostridia
+c__Erysipelotrichia
+"p__Proteobacteria;__"
+c__Alphaproteobacteria
+c__Betaproteobacteria
+c__Deltaproteobacteria
+c__Gammaproteobacteria
+"p__Saccharibacteria;c__"
+"p__TM7;c__TM7-3"
+"p__Tenericutes;c__Mollicutes"
+c__Verrucomicrobiae
+"k__Eukaryota;p__;c__"

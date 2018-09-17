@@ -1,0 +1,13 @@
+# Constructed from biom file
+#OTU ID	None	Streptomycin
+Unassigned;Other	0.0027173287276914208	0.00017855150094855485
+k__Bacteria;Other	4.605641911341393e-05	0.0
+k__Bacteria;p__Actinobacteria	0.0005987334484743812	0.015243834393482869
+k__Bacteria;p__Bacteroidetes	0.5019919401266565	0.63825465907823
+k__Bacteria;p__Cyanobacteria	0.007645365572826713	0.0
+k__Bacteria;p__Deferribacteres	0.010569948186528497	0.0
+k__Bacteria;p__Firmicutes	0.4473229706390353	0.009998884053119073
+k__Bacteria;p__Proteobacteria	0.019228554979850314	0.3363240709742213
+k__Bacteria;p__TM7	0.005342544617156016	0.0
+k__Bacteria;p__Tenericutes	0.001427748992515832	0.0
+k__Bacteria;p__Verrucomicrobia	0.0031088082901554403	0.0

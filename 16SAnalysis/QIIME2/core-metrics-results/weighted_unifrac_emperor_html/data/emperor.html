@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Emperor</title>
+    <!-- core dependencies that are otherwise included via the jupyter notebook -->
+    <script src="./vendor/js/require-2.1.22.min.js"></script>
+    <script src="./vendor/js/jquery-2.1.4.min.js"></script>
+    <meta charset="utf-8">
+
+    <script type="text/javascript">
+
+if ($("#emperor-css").length == 0){{
+    $("head").append([
+
+        '<link id="emperor-css" rel="stylesheet" type="text/css" href="./css/emperor.css">',
+        '<link rel="stylesheet" type="text/css" href="./vendor/css/jquery-ui.min.css">',
+        '<link rel="stylesheet" type="text/css" href="./vendor/css/slick.grid.min.css">',
+        '<link rel="stylesheet" type="text/css" href="./vendor/css/spectrum.min.css">',
+        '<link rel="stylesheet" type="text/css" href="./vendor/css/chosen.min.css">',
+        '<link rel="stylesheet" type="text/css" href="./vendor/css/jquery.contextMenu.min.css">'
+    ]);
+}}
+</script>
+
+
+    <style>
+      #emperor-notebook-0xf3ffc6c0 {
+        height:100vh !important;
+        padding: 0px !important;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        outline: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id='emperor-notebook-0xf3ffc6c0' style="position: relative; width:100%; height:500px;">
+  <div class='loading' style="position: absolute;top: 50%;left: 50%;margin-left: -229px; margin-top: -59px; z-index: 10000;height:118px;width:458px;padding:0px"><img src='./img/emperor.png' alt='Emperor resources missing. Expected them to be found in .'></div>
+</div>
+</div>
+
+<script type="text/javascript">
+requirejs.config({
+// the left side is the module name, and the right side is the path
+// relative to the baseUrl attribute, do NOT include the .js extension
+'paths': {
+  /* jQuery */
+  'jquery': './vendor/js/jquery-2.1.4.min',
+  'jqueryui': './vendor/js/jquery-ui.min',
+  'jquery_drag': './vendor/js/jquery.event.drag-2.2.min',
+
+  /* jQuery plugins */
+  'chosen': './vendor/js/chosen.jquery.min',
+  'spectrum': './vendor/js/spectrum.min',
+  'position': './vendor/js/jquery.ui.position.min',
+  'contextmenu': './vendor/js/jquery.contextMenu.min',
+
+  /* other libraries */
+  'underscore': './vendor/js/underscore-min',
+  'chroma': './vendor/js/chroma.min',
+  'filesaver': './vendor/js/FileSaver.min',
+  'blob': './vendor/js/Blob',
+  'canvastoblob': './vendor/js/canvas-toBlob',
+  'd3': './vendor/js/d3.min',
+
+  /* THREE.js and plugins */
+  'three': './vendor/js/three.min',
+  'orbitcontrols': './vendor/js/three.js-plugins/OrbitControls',
+  'projector': './vendor/js/three.js-plugins/Projector',
+  'svgrenderer': './vendor/js/three.js-plugins/SVGRenderer',
+  'canvasrenderer': './vendor/js/three.js-plugins/CanvasRenderer',
+
+  /* SlickGrid */
+  'slickcore': './vendor/js/slick.core.min',
+  'slickgrid': './vendor/js/slick.grid.min',
+  'slickformatters': './vendor/js/slick.editors.min',
+  'slickeditors': './vendor/js/slick.formatters.min',
+
+  /* Emperor's objects */
+  'util': './js/util',
+  'model': './js/model',
+  'view': './js/view',
+  'controller': './js/controller',
+  'draw': './js/draw',
+  'scene3d': './js/sceneplotview3d',
+  'shapes': './js/shapes',
+  'animationdirector': './js/animate',
+  'trajectory': './js/trajectory',
+
+  /* controllers */
+  'abcviewcontroller': './js/abc-view-controller',
+  'viewcontroller': './js/view-controller',
+  'colorviewcontroller': './js/color-view-controller',
+  'visibilitycontroller': './js/visibility-controller',
+  'opacityviewcontroller': './js/opacity-view-controller',
+  'scaleviewcontroller': './js/scale-view-controller',
+  'shapecontroller': './js/shape-controller',
+  'axescontroller': './js/axes-controller',
+  'animationscontroller': './js/animations-controller',
+
+  /* editors */
+  'shape-editor': './js/shape-editor',
+  'color-editor': './js/color-editor',
+  'scale-editor': './js/scale-editor'
+
+},
+/*
+   Libraries that are not AMD compatible need shim to declare their
+   dependencies.
+ */
+'shim': {
+  'jquery_drag': {
+    'deps': ['jquery', 'jqueryui']
+  },
+  'chosen': {
+    'deps': ['jquery'],
+    'exports': 'jQuery.fn.chosen'
+  },
+  'contextmenu' : {
+    'deps': ['jquery', 'jqueryui', 'position']
+  },
+  'filesaver' : {
+    'deps': ['blob']
+  },
+  'canvastoblob' : {
+    'deps': ['blob']
+  },
+  'slickcore': ['jqueryui'],
+  'slickgrid': ['slickcore', 'jquery_drag', 'slickformatters', 'slickeditors']
+}
+});
+
+requirejs(
+["jquery", "model", "controller"],
+function($, model, EmperorController) {
+  var DecompositionModel = model.DecompositionModel;
+
+  var div = $('#emperor-notebook-0xf3ffc6c0');
+
+  var data = {"plot": {"decomposition": {"axes_names": [0, 1, 2, 3, 4], "ci": null, "coordinates": [[-0.8523571983649842, 0.26423335967359446, -0.030190528107219176, -0.039326223646077, -0.13669600272445734], [-0.989075728346766, 0.16637449232336904, -0.1899846552975783, 0.05339520762043099, 0.013005506369011214], [-0.6687149193654102, -0.3878489867849094, 0.37249656718929103, 0.022547173945660432, 0.0019420522897159007], [-0.683185391434402, -0.8362497366986049, 0.04261486346207095, -0.00831574953941051, 0.0070941932895921805], [-0.8919300688648503, 0.46218343134269246, -0.2723596363161909, -0.033151549817654634, 0.09297639531058988], [1.0, -0.08763028572537113, -0.16431580891859165, -0.029246563713959877, -0.28867653635530616], [0.8958719453943372, -0.05450100973400296, -0.03102536122996275, -0.3749456117985364, 0.09922719440581204], [0.41238002311320365, 0.656575794444742, 0.4736501303576428, 0.0452132437418686, -0.004051284381455728], [0.948999403718146, -0.09359142086287034, -0.1259457048956955, 0.366720788215449, 0.07195269519647643], [0.8280119341507265, -0.08954563797863892, -0.07493986624376694, -0.0028907150077669324, 0.14322578660002044]], "edges": [], "percents_explained": [71.69221053258028, 16.649200219602456, 5.403217526116027, 2.9203980706008195, 1.5055993524842766], "sample_ids": ["WT.day3.11", "WT.day3.13", "WT.day3.14", "WT.day3.15", "WT.day3.9", "WT.unt.1", "WT.unt.2", "WT.unt.3", "WT.unt.4", "WT.unt.7"]}, "metadata": [["WT.day3.11", "Streptomycin", "DAY3", "WT", "16S_WT_day3_11_SRR2628505_1"], ["WT.day3.13", "Streptomycin", "DAY3", "WT", "16S_WT_day3_13_SRR2628506_1"], ["WT.day3.14", "Streptomycin", "DAY3", "WT", "16S_WT_day3_14_SRR2627471_1"], ["WT.day3.15", "Streptomycin", "DAY3", "WT", "16S_WT_day3_15_SRR2628507_1"], ["WT.day3.9", "Streptomycin", "DAY3", "WT", "16S_WT_day3_9_SRR2628504_1"], ["WT.unt.1", "None", "DAY0", "WT", "16S_WT_unt_1_SRR2627457_1"], ["WT.unt.2", "None", "DAY0", "WT", "16S_WT_unt_2_SRR2627461_1"], ["WT.unt.3", "None", "DAY0", "WT", "16S_WT_unt_3_SRR2627463_1"], ["WT.unt.4", "None", "DAY0", "WT", "16S_WT_unt_4_SRR2627464_1"], ["WT.unt.7", "None", "DAY0", "WT", "16S_WT_unt_7_SRR2627465_1"]], "metadata_headers": ["SampleID", "AntibioticUsage", "DaySinceExperimentStart", "Genotype", "Description"], "settings": {}, "type": "scatter"}};
+
+  var plot, biplot = null, ec;
+
+  function init() {
+    // Initialize the DecompositionModel for the scatter plot, and optionally
+    // add one for the biplot arrows
+    plot = new DecompositionModel(data.plot.decomposition,
+                                  data.plot.metadata_headers,
+                                  data.plot.metadata,
+                                  data.plot.type);
+
+    if (data.biplot) {
+      biplot = new DecompositionModel(data.biplot.decomposition,
+                                      data.biplot.metadata_headers,
+                                      data.biplot.metadata,
+                                      data.biplot.type);
+    }
+
+    ec = new EmperorController(plot, biplot, "emperor-notebook-0xf3ffc6c0");
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ec.render();
+  }
+  $(window).resize(function() {
+    ec.resize(div.innerWidth(), div.innerHeight());
+  });
+
+  $(function(){
+    init();
+    animate();
+
+    ec.ready = function () {
+      // any other code that needs to be executed when emperor is loaded should
+      // go here
+      ec.loadConfig(data.plot.settings);
+    }
+  });
+
+}); // END REQUIRE.JS block
+</script>
+  </body>
+</html>

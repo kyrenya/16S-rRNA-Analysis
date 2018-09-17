@@ -1,0 +1,11 @@
+index,k__Bacteria;__,k__Bacteria;p__Actinobacteria,k__Bacteria;p__Bacteroidetes,k__Bacteria;p__Cyanobacteria,k__Bacteria;p__Deferribacteres,k__Bacteria;p__Firmicutes,k__Bacteria;p__Proteobacteria,k__Bacteria;p__TM7,k__Bacteria;p__Tenericutes,k__Bacteria;p__Verrucomicrobia,AntibioticUsage,DaySinceExperimentStart,Genotype,Description
+WT.day3.11,0.0,65.0,5113.0,0.0,0.0,63.0,1277.0,0.0,0.0,0.0,Streptomycin,DAY3,WT,16S_WT_day3_11_SRR2628505_1
+WT.day3.13,0.0,240.0,5698.0,0.0,0.0,0.0,929.0,0.0,0.0,0.0,Streptomycin,DAY3,WT,16S_WT_day3_13_SRR2628506_1
+WT.day3.14,196.0,71.0,3896.0,0.0,0.0,0.0,2506.0,0.0,0.0,0.0,Streptomycin,DAY3,WT,16S_WT_day3_14_SRR2627471_1
+WT.day3.15,0.0,297.0,2391.0,0.0,0.0,169.0,2617.0,0.0,0.0,0.0,Streptomycin,DAY3,WT,16S_WT_day3_15_SRR2628507_1
+WT.day3.9,0.0,33.0,5202.0,0.0,0.0,84.0,483.0,0.0,0.0,0.0,Streptomycin,DAY3,WT,16S_WT_day3_9_SRR2628504_1
+WT.unt.1,1143.0,0.0,3138.0,89.0,131.0,4069.0,70.0,50.0,0.0,27.0,None,DAY0,WT,16S_WT_unt_1_SRR2627457_1
+WT.unt.2,1392.0,0.0,3995.0,43.0,0.0,3470.0,26.0,25.0,0.0,0.0,None,DAY0,WT,16S_WT_unt_2_SRR2627461_1
+WT.unt.3,683.0,0.0,5672.0,92.0,25.0,1432.0,278.0,64.0,53.0,0.0,None,DAY0,WT,16S_WT_unt_3_SRR2627463_1
+WT.unt.4,264.0,0.0,2999.0,97.0,127.0,4005.0,84.0,54.0,0.0,0.0,None,DAY0,WT,16S_WT_unt_4_SRR2627464_1
+WT.unt.7,842.0,0.0,3600.0,0.0,75.0,3630.0,131.0,77.0,0.0,82.0,None,DAY0,WT,16S_WT_unt_7_SRR2627465_1

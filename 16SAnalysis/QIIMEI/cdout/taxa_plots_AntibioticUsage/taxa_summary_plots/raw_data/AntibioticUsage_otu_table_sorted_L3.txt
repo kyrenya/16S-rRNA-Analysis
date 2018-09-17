@@ -1,0 +1,21 @@
+# Constructed from biom file
+#OTU ID	None	Streptomycin
+Unassigned;Other;Other	0.0027173287276914208	0.00017855150094855485
+k__Bacteria;Other;Other	4.605641911341393e-05	0.0
+k__Bacteria;p__Actinobacteria;c__Actinobacteria	0.00018422567645365572	6.695681285570806e-05
+k__Bacteria;p__Actinobacteria;c__Coriobacteriia	0.0004145077720207254	0.015176877580627163
+k__Bacteria;p__Bacteroidetes;c__Bacteroidia	0.5018998272884297	0.6379198750139514
+k__Bacteria;p__Bacteroidetes;c__Flavobacteriia	9.211283822682786e-05	2.2318937618569356e-05
+k__Bacteria;p__Bacteroidetes;c__Sphingobacteriia	0.0	0.000312465126659971
+k__Bacteria;p__Cyanobacteria;c__4C0d-2	0.007645365572826713	0.0
+k__Bacteria;p__Deferribacteres;c__Deferribacteres	0.010569948186528497	0.0
+k__Bacteria;p__Firmicutes;c__Bacilli	0.0035233160621761656	0.0038388572703939292
+k__Bacteria;p__Firmicutes;c__Clostridia	0.44290155440414763	0.0060484320946322945
+k__Bacteria;p__Firmicutes;c__Erysipelotrichi	0.0008981001727115718	0.00011159468809284677
+k__Bacteria;p__Proteobacteria;c__Alphaproteobacteria	0.0011283822682786413	0.0008927575047427742
+k__Bacteria;p__Proteobacteria;c__Betaproteobacteria	0.010109383995394355	0.048186586318491244
+k__Bacteria;p__Proteobacteria;c__Deltaproteobacteria	0.007829591249280368	0.0
+k__Bacteria;p__Proteobacteria;c__Gammaproteobacteria	0.00016119746689694875	0.2872447271509873
+k__Bacteria;p__TM7;c__TM7-3	0.005342544617156016	0.0
+k__Bacteria;p__Tenericutes;c__Mollicutes	0.001427748992515832	0.0
+k__Bacteria;p__Verrucomicrobia;c__Verrucomicrobiae	0.0031088082901554403	0.0

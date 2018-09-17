@@ -1,0 +1,2 @@
+Group1	Group2	Group1 mean	Group1 std	Group2 mean	Group2 std	t stat	p-value
+None	Streptomycin	1072.5339262991697	60.52939510456798	259.84137245631206	25.680714231220843	24.7199877126	0.007

@@ -1,0 +1,21 @@
+The visualization will have two plots. 
+The top plot is an alpha rarefaction plot,
+ and is primarily used to determine if the richness of the samples
+ has been fully observed or sequenced. If the lines in the plot appear to “level out”
+ (i.e., approach a slope of zero) at some sampling depth along the x-axis,
+ that suggests that collecting additional sequences beyond that sampling depth 
+would not be likely to result in the observation of additional features. 
+If the lines in a plot don’t level out, this may be because the richness of the samples 
+hasn’t been fully observed yet (because too few sequences were collected), 
+or it could be an indicator that a lot of sequencing error remains in the data 
+(which is being mistaken for novel diversity).
+
+The bottom plot in this visualization is important when grouping samples by metadata. 
+It illustrates the number of samples that remain in each group when the feature table is 
+rarefied to each sampling depth. If a given sampling depth d is larger than the total frequency
+ of a sample s (i.e., the number of sequences that were obtained for sample s),
+ it is not possible to compute the diversity metric for sample s at sampling depth d. 
+If many of the samples in a group have lower total frequencies than d, the average diversity
+ presented for that group at d in the top plot will be unreliable because it will have been 
+computed on relatively few samples. When grouping samples by metadata, 
+it is therefore essential to look at the bottom plot to ensure that the data presented in the top plot is reliable.
